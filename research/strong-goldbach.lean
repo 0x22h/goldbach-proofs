@@ -140,7 +140,9 @@ theorem packetPartition (n : ℕ) :
     · simp [T, ht]
   unfold pair J
   change (intervalIntegral (fun t => (arcs n)ᶜ.indicator F t) 0 1 MeasureTheory.volume).re = _
-  rw [partition, intervalIntegral.integral_add (integrable _ hK) (integrable _ (continuous_const.sub hK))] <;> rfl
+  have hD : Continuous (fun t : ℝ => 1 - K n t) := continuous_const.sub hK
+  rw [partition, intervalIntegral.integral_add (integrable (K n) hK)
+    (integrable (fun t => 1 - K n t) hD)] <;> rfl
 
 theorem packetToBulk
     (packet : ∃ P : ℕ, ∀ n ≥ P, Even n → -(n:ℝ)/576 ≤ J n (K n))
