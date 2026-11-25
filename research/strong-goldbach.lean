@@ -1947,7 +1947,7 @@ theorem resonantFromMangoldt
 private theorem totientSquare (q : ℕ) :
     q ≤ 2*q.totient^2 ∧ (¬ 2 ∣ q → q ≤ q.totient^2) := by
   induction q using Nat.strong_induction_on with
-  | h q ih =>
+  | ind q ih =>
     rcases eq_or_ne q 0 with rfl | h0
     · simp
     rcases eq_or_ne q 1 with rfl | h1
@@ -1991,8 +1991,8 @@ private theorem totientSum (m : ℕ) :
     let u := Real.sqrt (m:ℝ)
     let v := Real.sqrt ((m:ℝ)+1)
     let f : ℝ := (m+1).totient
-    have fp : 0 < f := by exact_mod_cast (Nat.totient_pos.mpr (Nat.succ_pos m))
-    have hb : (m:ℝ)+1 ≤ 2*f^2 := by exact_mod_cast (totientSquare (m+1)).1
+    have fp : 0 < f := by dsimp [f]; exact_mod_cast (Nat.totient_pos.mpr (Nat.succ_pos m))
+    have hb : (m:ℝ)+1 ≤ 2*f^2 := by dsimp [f]; exact_mod_cast (totientSquare (m+1)).1
     have hu : u^2 = (m:ℝ) := Real.sq_sqrt (by positivity)
     have hv : v^2 = (m:ℝ)+1 := Real.sq_sqrt (by positivity)
     have uv : u ≤ v := Real.sqrt_le_sqrt (by linarith)
@@ -2014,14 +2014,12 @@ private def profile (n q : ℕ) (c t : ℝ) :=
 private def farPeak (n q : ℕ) (a : ℕ) :=
   integralOn {t : ℝ | (gridQ n:ℝ)^2/(n:ℝ) < |t-(a:ℝ)/(q:ℝ)|} (profile n q ((a:ℝ)/(q:ℝ)))
 
-private theorem singleFarPeak (n q : ℕ) (hn : 0<n) (hq : 0<q) (hQ : 0<gridQ n) (a : ℕ) :
-    farPeak n q a ≤ (8*Real.pi*((n:ℝ)/(gridQ n:ℝ)^2))/(q.totient:ℝ)^2 := by
-  let r := (gridQ n:ℝ)^2/(n:ℝ)
-  let c := (a:ℝ)/(q:ℝ)
+private theorem peakOutside (n q : ℕ) (hq : 0<q) (c r : ℝ) (hr : 0<r) :
+    integralOn {t : ℝ | r < |t-c|} (profile n q c) ≤
+      (8/(q.totient:ℝ)^2)*(Real.pi/r) := by
   let f : ℝ := q.totient
   let s := {t : ℝ | r < |t-c|}
-  have fp : 0<f := by exact_mod_cast (Nat.totient_pos.mpr hq)
-  have hr : 0<r := by dsimp [r]; positivity
+  have fp : 0<f := by dsimp [f]; exact_mod_cast (Nat.totient_pos.mpr hq)
   have hs : MeasurableSet s :=
     (isOpen_lt continuous_const (continuous_abs.comp (continuous_id.sub continuous_const))).measurableSet
   have hd : Continuous (fun t : ℝ => f^2*(1+((n:ℝ)*(t-c))^2)) := by fun_prop
@@ -2049,7 +2047,12 @@ private theorem singleFarPeak (n q : ℕ) (hn : 0<n) (hq : 0<q) (hQ : 0<gridQ n)
       · rw [Set.indicator_of_notMem ht]; unfold lorentz; positivity
     _ = (8/f^2)*(∫ t in (0:ℝ)..1, lorentz r c t) := intervalIntegral.integral_const_mul ..
     _ ≤ (8/f^2)*(Real.pi/r) := mul_le_mul_of_nonneg_left (lorentzIntegral hr c) (by positivity)
-    _ = _ := by dsimp [r,f]; field_simp <;> ring
+
+private theorem singleFarPeak (n q : ℕ) (hn : 0<n) (hq : 0<q) (hQ : 0<gridQ n) (a : ℕ) :
+    farPeak n q a ≤ (8*Real.pi*((n:ℝ)/(gridQ n:ℝ)^2))/(q.totient:ℝ)^2 := by
+  have hr : 0 < (gridQ n:ℝ)^2/(n:ℝ) := by positivity
+  apply (peakOutside n q hq ((a:ℝ)/(q:ℝ)) _ hr).trans_eq
+  field_simp <;> ring
 
 private def numerators (q : ℕ) := (Finset.range (q+1)).filter (fun a => Nat.Coprime a q)
 
@@ -2114,6 +2117,89 @@ theorem farTails (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n ≥ N,
   apply (div_le_iff₀ (by positivity)).mpr
   have hh := mul_le_mul_of_nonneg_right ((div_le_iff₀ hε).mp hM') (Nat.cast_nonneg (α := ℝ) n)
   linarith only [hh]
+
+
+private theorem packetVariation (m : ℕ) (hm : 0<m) (x y : ℝ) :
+    |packet m x/(m:ℝ)-packet m y/(m:ℝ)| ≤ 2*Real.pi*(2:ℝ)^m*|x-y| := by
+  have mr : (0:ℝ)<m := by exact_mod_cast hm
+  let C := 2*Real.pi*(2:ℝ)^m*|x-y|
+  rw [← sub_div,abs_div,abs_of_pos mr]
+  apply (div_le_iff₀ mr).mpr
+  unfold packet
+  rw [← Finset.sum_sub_distrib]
+  calc
+    _ ≤ ∑ j ∈ Finset.range m, |Real.cos (2*Real.pi*(2:ℝ)^(j+1)*x) - Real.cos (2*Real.pi*(2:ℝ)^(j+1)*y)| :=
+      Finset.abs_sum_le_sum_abs ..
+    _ ≤ ∑ _j ∈ Finset.range m, C := by
+      apply Finset.sum_le_sum
+      intro j hj
+      let f := 2*Real.pi*(2:ℝ)^(j+1)
+      apply (Real.abs_cos_sub_cos_le (f*x) (f*y)).trans
+      rw [← mul_sub,abs_mul,abs_of_nonneg (by dsimp [f]; positivity : 0 ≤ f)]
+      dsimp [f,C]
+      gcongr
+      exact Finset.mem_range.mp hj
+    _ = _ := by simp [C]; ring
+
+private theorem exponentialRoom (m : ℕ) (hm : 128≤m) :
+    48*(2*(m:ℝ)+3)^4 ≤ (2:ℝ)^m := by
+  obtain ⟨k,rfl⟩ := Nat.exists_eq_add_of_le hm
+  induction k with
+  | zero => norm_num
+  | succ k ih =>
+    calc
+      _ ≤ 2*(48*(2*((128+k:ℕ):ℝ)+3)^4) := by
+        apply sub_nonneg.mp
+        push_cast
+        ring_nf
+        positivity
+      _ ≤ 2*(2:ℝ)^(128+k) := by linarith only [ih]
+      _ = _ := by rw [pow_succ]; ring
+
+theorem rationalCenterStability : ∃ N : ℕ, ∀ n ≥ N, ∀ x y : ℝ,
+    |x-y| ≤ (gridQ n:ℝ)^2/(n:ℝ) → (1:ℝ)/2 < packet (length n) x/(length n:ℝ) →
+      (1:ℝ)/3 < packet (length n) y/(length n:ℝ) := by
+  refine ⟨2^256, ?_⟩
+  intro n hn x y hxy hpeak
+  let k := Nat.log 2 n
+  let m := length n
+  have hk : 256 ≤ k := Nat.le_log_of_pow_le (by decide) hn
+  have hlen : m = k/2 := by dsimp [m,k,length]; omega
+  have hm : 128≤m := by omega
+  have hn' : 0<n := lt_of_lt_of_le (by positivity : 0<2^256) hn
+  have nr : (0:ℝ)<n := by exact_mod_cast hn'
+  have top := Nat.lt_pow_succ_log_self (by decide : 1<2) n
+  have base : 2^k ≤ n := Nat.pow_log_le_self 2 (by omega)
+  have next : Nat.log 2 (n+2) ≤ k+1 := by
+    by_contra! tooBig
+    have pw := Nat.pow_le_pow_right (by decide : 0<2) (show k+2 ≤ Nat.log 2 (n+2) by omega)
+    have up := Nat.pow_log_le_self 2 (by omega : n+2≠0)
+    change n<2^(k+1) at top
+    rw [show k+2=(k+1)+1 by omega,pow_succ] at pw
+    have one : 2≤2^(k+1) := by simpa using Nat.pow_le_pow_right (by decide : 0<2) (show 1≤k+1 by omega)
+    omega
+  have qbound : (gridQ n:ℝ)^2 ≤ (2*(m:ℝ)+3)^4 := by
+    have h : Nat.log 2 (n+2) ≤ 2*m+3 := by omega
+    have h' : (Nat.log 2 (n+2):ℝ) ≤ 2*(m:ℝ)+3 := by exact_mod_cast h
+    unfold gridQ
+    push_cast
+    rw [← pow_mul]
+    exact pow_le_pow_left₀ (Nat.cast_nonneg _) h' 4
+  have pn : ((2:ℝ)^m)^2 ≤ n := by
+    rw [← pow_mul]
+    exact_mod_cast (Nat.pow_le_pow_right (by decide : 0<2) (show m*2≤k by omega)).trans base
+  have hq : 48*(gridQ n:ℝ)^2 ≤ (2:ℝ)^m := by linarith only [exponentialRoom m hm,qbound]
+  have coeff : 12*Real.pi*(gridQ n:ℝ)^2 ≤ (2:ℝ)^m := by
+    linarith only [hq,mul_le_mul_of_nonneg_right Real.pi_lt_four.le (sq_nonneg (gridQ n:ℝ))]
+  have cost : 2*Real.pi*(2:ℝ)^m*|x-y| ≤ 1/6 := by
+    apply (mul_le_mul_of_nonneg_left hxy (by positivity : 0≤2*Real.pi*(2:ℝ)^m)).trans
+    rw [← mul_div_assoc]
+    apply (div_le_iff₀ nr).mpr
+    linarith only [mul_le_mul_of_nonneg_right coeff (by positivity : 0 ≤ (2:ℝ)^m),pn]
+  have bound := (packetVariation m (by omega) x y).trans cost
+  change (1:ℝ)/2 < packet m x/(m:ℝ) at hpeak
+  change (1:ℝ)/3 < packet m y/(m:ℝ)
+  linarith only [le_abs_self (packet m x/(m:ℝ)-packet m y/(m:ℝ)),bound,hpeak]
 
 end
 end GoldbachPacket
