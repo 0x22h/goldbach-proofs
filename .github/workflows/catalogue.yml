@@ -62,8 +62,15 @@ jobs:
           lines = [Path("../research/strong-goldbach.lean").read_text(),
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
+          reductions = {
+              "L-goldbach-bulk-binary-recombine": "GoldbachBudget.packetToBulk",
+              "L-goldbach-fixed-budget-to-dyadic": "GoldbachBudget.fixedToDyadic",
+          }
           for gap in gaps:
               lines.extend(("", "-- " + gap["id"], "example : Prop := (" + gap["statement"] + ")"))
+              if gap["id"] in reductions:
+                  lines.append(f"example : ({gap['statement']}) := {reductions.pop(gap['id'])}")
+          assert not reductions, f"Missing catalogue reductions: {reductions}"
           (Path(os.environ["RUNNER_TEMP"]) / "Catalogue.lean").write_text("\n".join(lines) + "\n")
           print(f"Type-checking {len(gaps)} propositions")
           PY
