@@ -101,7 +101,7 @@ def discussion_widget(lang, prefix):
     alt = "知乎 AI4S 讨论组（哥猜 3 群）微信群二维码" if zh else "WeChat QR code for the Zhihu AI4S Goldbach discussion group 3"
     return f"""<details class="discussion-widget" id="wechat-discussion" name="research-qr" aria-label="{name}"><summary><img class="wechat-mark" src="{prefix}wechat.svg" width="34" height="34" alt="">{label}<span aria-hidden="true"></span></summary>
 <div class="discussion-body"><strong>{name}</strong><p>{instructions}</p>
-<div class="discussion-code"><img src="{prefix}discussion-qr.png" alt="{alt}" width="360" height="566"></div>
+<div class="discussion-code"><img src="{prefix}discussion-qr.png" alt="{alt}" width="800" height="1198"></div>
 <small>{validity}</small></div></details>"""
 
 
