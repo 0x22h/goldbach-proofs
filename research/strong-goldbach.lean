@@ -1790,5 +1790,158 @@ theorem spikesFromLateLevels
     · by_cases a : t ∈ above n i <;> by_cases c : t ∈ smallPeaks n <;> simp [hh,a,c,nn]
   linarith only [maj,ht,hM n (by omega)]
 
+
+private def lambdaSpec (n : ℕ) := GoldbachBudget.spec n ArithmeticFunction.vonMangoldt
+private def highSpec (n : ℕ) := GoldbachBudget.spec n (GoldbachBudget.high n)
+private def perturbation (n : ℕ) (t : ℝ) := ‖lambdaSpec n t-highSpec n t‖^2
+
+private theorem nonnegativePrime (k : ℕ) : 0 ≤ GoldbachBudget.w k := by
+  unfold GoldbachBudget.w
+  split_ifs with hp
+  · exact Real.log_nonneg (by exact_mod_cast hp.one_lt.le)
+  · exact le_rfl
+
+/-- Adding prime powers and restoring the low primes has an explicit uniform Fourier cost. -/
+theorem mangoldtSpectralError (n : ℕ) (hn : 1 ≤ n) (t : ℝ) :
+    ‖lambdaSpec n t-highSpec n t‖ ≤ 4*Real.sqrt (n:ℝ)*Real.log (n:ℝ) := by
+  let Λ := ArithmeticFunction.vonMangoldt
+  let w := GoldbachBudget.w
+  let lo := GoldbachBudget.low n
+  let hi := GoldbachBudget.high n
+  let R := Finset.range (n+1)
+  have hn' : (1:ℝ) ≤ n := by exact_mod_cast hn
+  have hlog := Real.log_nonneg hn'
+  have dpos (k : ℕ) : 0 ≤ Λ k-w k := by
+    dsimp only [Λ,w,GoldbachBudget.w]
+    by_cases hp : k.Prime
+    · simp [hp,ArithmeticFunction.vonMangoldt_apply_prime hp]
+    · simp [hp,ArithmeticFunction.vonMangoldt_nonneg]
+  have lpos (k : ℕ) : 0 ≤ lo k := by
+    unfold lo GoldbachBudget.low
+    split <;> first | exact nonnegativePrime _ | exact le_rfl
+  have main (k : ℕ) : |Λ k-hi k| = (Λ k-w k)+lo k := by
+    have eq : Λ k-hi k = (Λ k-w k)+lo k := by dsimp [hi,GoldbachBudget.high,lo,w]; ring
+    rw [eq,abs_of_nonneg (add_nonneg (dpos k) (lpos k))]
+  have ri : R = Finset.Icc 0 n := by ext k; simp [R]; omega
+  have hh : (∑ k ∈ R, (Λ k - w k)) = Chebyshev.psi (n:ℝ)-Chebyshev.theta (n:ℝ) := by
+    rw [Finset.sum_sub_distrib,Chebyshev.psi_eq_sum_Icc,Chebyshev.theta_eq_sum_Icc,
+      Finset.sum_filter,Nat.floor_natCast,ri]
+    rfl
+  have lowMass : (∑ k ∈ R, lo k) ≤ 2*Real.sqrt (n:ℝ)*Real.log (n:ℝ) := by
+    let T := R.filter (fun k => k^3≤n)
+    have eq : (∑ k ∈ R, lo k) = ∑ k ∈ T, w k := by simp [T,Finset.sum_filter,lo,GoldbachBudget.low,w]
+    have subset : T ⊆ Finset.range (n.sqrt+1) := by
+      intro k hk
+      have bound := (Finset.mem_filter.mp hk).2
+      have hk2 : k^2 ≤ n := by
+        by_cases h : k=0
+        · simp [h]
+        · exact (Nat.pow_le_pow_right (by omega : 0<k) (by decide : 2≤3)).trans bound
+      exact Finset.mem_range.mpr (by have := Nat.le_sqrt.mpr (show k*k≤n by simpa [pow_two] using hk2); omega)
+    have wt {k : ℕ} (hk : k ∈ T) : w k ≤ Real.log (n:ℝ) := by
+      have hkn := Finset.mem_range.mp (Finset.mem_filter.mp hk).1
+      dsimp only [w,GoldbachBudget.w]
+      split_ifs with hp
+      · have hk' : 0<(k:ℝ) := by exact_mod_cast hp.pos
+        exact Real.log_le_log hk' (by exact_mod_cast (show k≤n by omega))
+      · exact hlog
+    have hr : (n.sqrt:ℝ) ≤ Real.sqrt (n:ℝ) := by
+      have hsq : (n.sqrt:ℝ)*(n.sqrt:ℝ) ≤ (n:ℝ) := by exact_mod_cast Nat.sqrt_le n
+      nlinarith [Real.sq_sqrt (Nat.cast_nonneg (α := ℝ) n),Real.sqrt_nonneg (n:ℝ),
+        Nat.cast_nonneg (α := ℝ) n.sqrt,sq_nonneg ((n.sqrt:ℝ)-Real.sqrt (n:ℝ))]
+    have h1 := Real.one_le_sqrt.mpr hn'
+    rw [eq]
+    calc
+      _ ≤ ∑ _k ∈ T, Real.log (n:ℝ) := Finset.sum_le_sum fun k hk => wt hk
+      _ = (T.card:ℝ)*Real.log (n:ℝ) := by simp
+      _ ≤ 2*Real.sqrt (n:ℝ)*Real.log (n:ℝ) := by
+        apply mul_le_mul_of_nonneg_right _ hlog
+        have hcard := Finset.card_le_card subset
+        rw [Finset.card_range] at hcard
+        have h' : (T.card:ℝ) ≤ (n.sqrt:ℝ)+1 := by exact_mod_cast hcard
+        linarith
+  have dif : lambdaSpec n t-highSpec n t =
+      ∑ k ∈ R, ((Λ k-hi k:ℝ):ℂ)*GoldbachBudget.phase ((k:ℝ)*t) := by
+    unfold lambdaSpec highSpec GoldbachBudget.spec
+    rw [← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro k _
+    simp only [Complex.ofReal_sub,sub_mul,Λ,hi]
+  rw [dif]
+  calc
+    _ ≤ ∑ k ∈ R, ‖((Λ k-hi k:ℝ):ℂ)*GoldbachBudget.phase ((k:ℝ)*t)‖ := norm_sum_le ..
+    _ = (∑ k ∈ R, (Λ k-w k)) + ∑ k ∈ R, lo k := by
+      simp only [norm_mul,phaseUnit,mul_one,Complex.norm_real,Real.norm_eq_abs,main,Finset.sum_add_distrib]
+    _ ≤ _ := by rw [hh]; linarith only [Chebyshev.psi_sub_theta_le hn',lowMass]
+
+theorem mangoldtMaskedError (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n ≥ N,
+    integralOn (resonant n) (perturbation n) ≤ ε*(n:ℝ) := by
+  obtain ⟨N,hN⟩ := maskLogDecay 2 (ε/16) (by positivity)
+  refine ⟨max N 1, ?_⟩
+  intro n hn
+  have hn1 : 1≤n := by omega
+  have hl := Real.log_nonneg (by exact_mod_cast hn1 : (1:ℝ) ≤ n)
+  have hc : Continuous (perturbation n) := by
+    unfold perturbation lambdaSpec highSpec GoldbachBudget.spec GoldbachBudget.phase
+    fun_prop
+  let C := 16*(n:ℝ)*(1+Real.log (n:ℝ))^2
+  have pt (t : ℝ) : perturbation n t ≤ C := by
+    have h := pow_le_pow_left₀ (norm_nonneg _) (mangoldtSpectralError n hn1 t) 2
+    have id : (4*Real.sqrt (n:ℝ)*Real.log (n:ℝ))^2 = 16*(n:ℝ)*Real.log (n:ℝ)^2 := by
+      rw [mul_pow,mul_pow,Real.sq_sqrt (Nat.cast_nonneg _)]
+      ring
+    rw [id] at h
+    exact h.trans (mul_le_mul_of_nonneg_left (by nlinarith : Real.log (n:ℝ)^2 ≤ (1+Real.log (n:ℝ))^2) (by positivity))
+  let A := (resonant n).indicator (fun _ => (1:ℝ))
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, C*A t := by
+      apply intervalIntegral.integral_mono_on (by norm_num) (onRegion (measurableMask n) hc)
+        ((onRegion (measurableMask n) continuous_const).const_mul _)
+      intro t _
+      by_cases ht : t ∈ resonant n <;> simp [ht,A,pt t]
+    _ = C * (∫ t in (0:ℝ)..1, A t) := intervalIntegral.integral_const_mul ..
+    _ ≤ _ := by
+      have h := mul_le_mul_of_nonneg_left (hN n (by omega)) (by positivity : 0 ≤ 16*(n:ℝ))
+      dsimp only [C,A]; linarith only [h]
+
+theorem resonantFromMangoldt
+    (hΛ : ∃ N : ℕ, ∀ n ≥ N, Even n →
+      integralOn (resonant n) (fun t => ‖lambdaSpec n t‖^2) ≤ (n:ℝ)/640) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n (resonant n) ≤ (n:ℝ)/576 := by
+  obtain ⟨N,hN⟩ := hΛ
+  obtain ⟨M,hM⟩ := mangoldtMaskedError (1/1000000) (by norm_num)
+  refine ⟨max N M, ?_⟩
+  intro n hn he
+  let s := resonant n
+  let f := fun t => ‖lambdaSpec n t‖^2
+  let d := perturbation n
+  have hc : Continuous f := by unfold f lambdaSpec GoldbachBudget.spec GoldbachBudget.phase; fun_prop
+  have hd : Continuous d := by unfold d perturbation lambdaSpec highSpec GoldbachBudget.spec GoldbachBudget.phase; fun_prop
+  have key : regionMass n s ≤ (17/16)*integralOn s f + 17*integralOn s d := by
+    unfold integralOn
+    rw [← intervalIntegral.integral_const_mul,← intervalIntegral.integral_const_mul,
+      ← intervalIntegral.integral_add ((onRegion (measurableMask n) hc).const_mul _) ((onRegion (measurableMask n) hd).const_mul _)]
+    apply intervalIntegral.integral_mono_on (by norm_num) (onRegion (measurableMask n) (continuousDensity n))
+      (((onRegion (measurableMask n) hc).const_mul _).add ((onRegion (measurableMask n) hd).const_mul _))
+    intro t _
+    change s.indicator (density n) t ≤ (17/16)*s.indicator f t+17*s.indicator d t
+    by_cases ht : t ∈ s
+    · simp only [Set.indicator_of_mem ht]
+      have tri : ‖highSpec n t‖ ≤ ‖lambdaSpec n t‖+‖lambdaSpec n t-highSpec n t‖ := by
+        have eq : highSpec n t = lambdaSpec n t - (lambdaSpec n t-highSpec n t) := by abel
+        calc
+          _ = ‖lambdaSpec n t - (lambdaSpec n t-highSpec n t)‖ := congrArg norm eq
+          _ ≤ _ := norm_sub_le ..
+      have hs := pow_le_pow_left₀ (norm_nonneg _) tri 2
+      change ‖highSpec n t‖^2 ≤ (17/16)*‖lambdaSpec n t‖^2+17*‖lambdaSpec n t-highSpec n t‖^2
+      nlinarith only [hs,sq_nonneg (‖lambdaSpec n t‖/4-4*‖lambdaSpec n t-highSpec n t‖)]
+    · simp [ht]
+  have h := hN n (by omega) he
+  have h' := hM n (by omega)
+  change integralOn s f ≤ _ at h
+  change integralOn s d ≤ _ at h'
+  change regionMass n s ≤ _
+  linarith only [key,h,h',Nat.cast_nonneg (α := ℝ) n]
+
 end
 end GoldbachPacket
