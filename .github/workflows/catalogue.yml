@@ -63,6 +63,7 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-mask-log-decay": "GoldbachPacket.maskLogDecay",
               "L-goldbach-packet-doubling-tilt": "GoldbachPacket.doublingTilt",
               "L-goldbach-packet-exponential-moment": "GoldbachPacket.exponentialMoment",
               "L-goldbach-packet-upper-tail-half": "GoldbachPacket.upperTail",

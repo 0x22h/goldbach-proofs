@@ -366,7 +366,7 @@ private theorem doublePeriod (g : ℝ → ℝ) (hc : Continuous g) (hp : Functio
     (∫ t in (0:ℝ)..1, g (2*t)) = ∫ t in (0:ℝ)..1, g t := by
   have hd : Continuous (fun t : ℝ => g (2*t)) := hc.comp (continuous_const.mul continuous_id)
   rw [pairHalves _ hd]
-  simp only [show ∀ t : ℝ, 2*(t+1/2) = 2*t+1 by intro t; ring, hp]
+  simp only [show ∀ t : ℝ, 2*(t+1/2) = 2*t+1 by intro t; ring, show ∀ y : ℝ, g (y+1) = g y from hp]
   rw [intervalIntegral.integral_add (hd.intervalIntegrable ..) (hd.intervalIntegrable ..), scaleHalf]
   ring
 
@@ -391,9 +391,10 @@ theorem doublingTilt (s : ℝ) (g : ℝ → ℝ) (hg : Continuous g)
         rw [abs_mul]
         exact (mul_le_mul_of_nonneg_left (abs_le.mpr
           ⟨Real.neg_one_le_cos _, Real.cos_le_one _⟩) (abs_nonneg s)).trans_eq (mul_one _)
-      dsimp only [f]
+      change Real.exp (s*Real.cos (2*Real.pi*t))*g (2*t) +
+        Real.exp (s*Real.cos (2*Real.pi*(t+1/2)))*g (2*(t+1/2)) ≤ _
       rw [show 2*Real.pi*(t+1/2) = 2*Real.pi*t+Real.pi by ring, Real.cos_add_pi,
-        show 2*(t+1/2) = 2*t+1 by ring, hp, mul_neg, ← add_mul]
+        show 2*(t+1/2) = 2*t+1 by ring, hp (2*t), mul_neg, ← add_mul]
       rw [Real.cosh_eq] at hcos
       exact mul_le_mul_of_nonneg_right (by linarith) (hn _)
     _ = _ := by rw [intervalIntegral.integral_const_mul, scaleHalf]; ring
@@ -416,8 +417,8 @@ private theorem seriesSucc (m : ℕ) (t : ℝ) :
   unfold series
   rw [Finset.sum_range_succ']
   simp only [pow_zero, mul_one]
-  rw [add_comm]
-  congr 1
+  rw [add_comm (∑ j ∈ Finset.range m, _) _]
+  apply congrArg (fun u : ℝ => Real.cos (2*Real.pi*t) + u)
   apply Finset.sum_congr rfl
   intro j _
   congr 1
@@ -429,7 +430,7 @@ theorem exponentialMoment (m : ℕ) (s : ℝ) :
     (∫ t in (0:ℝ)..1, Real.exp (s*packet m t)) ≤ (Real.cosh s)^m := by
   have hc (k : ℕ) : Continuous (fun t => Real.exp (s*series k t)) := by unfold series; fun_prop
   have hp (k : ℕ) : Function.Periodic (fun t => Real.exp (s*series k t)) 1 :=
-    fun t => by rw [periodSeries k t]
+    fun t => congrArg (fun u : ℝ => Real.exp (s*u)) (periodSeries k t)
   have h (k : ℕ) : (∫ t in (0:ℝ)..1, Real.exp (s*series k t)) ≤ (Real.cosh s)^k := by
     induction k with
     | zero => simp [series]
@@ -479,6 +480,79 @@ theorem upperTail (m : ℕ) (_hm : 0 < m) :
       norm_num at hs
       gcongr
     _ = _ := by rw [← Real.exp_nat_mul, ← Real.exp_add]; congr 1; ring
+
+private def length (n : ℕ) := max 1 (Nat.log 2 n / 2)
+private def resonant (n : ℕ) := {t : ℝ | t ∉ GoldbachBudget.arcs n ∧
+  (1:ℝ)/2 < packet (length n) t / (length n:ℝ)}
+
+private theorem maskedArea (n : ℕ) :
+    (∫ t in (0:ℝ)..1, (resonant n).indicator (fun _ => (1:ℝ)) t) ≤
+      Real.exp (-(length n:ℝ)/8) := by
+  let m := length n
+  have hm : 0 < m := by dsimp [m, length]; omega
+  have hmr : (0:ℝ) < m := by exact_mod_cast hm
+  let A := {t : ℝ | (m:ℝ)/2 < packet m t}
+  have hc : Continuous (packet m) := by unfold packet; fun_prop
+  have hA : MeasurableSet A :=
+    (isOpen_lt (continuous_const : Continuous (fun _ : ℝ => (m:ℝ)/2)) hc).measurableSet
+  have heq : resonant n = (GoldbachBudget.arcs n)ᶜ ∩ A := by
+    ext t
+    change (_ ∧ (1:ℝ)/2 < packet m t / (m:ℝ)) ↔ (_ ∧ (m:ℝ)/2 < packet m t)
+    rw [lt_div_iff₀ hmr]
+    ring_nf
+  have integ {s : Set ℝ} (hs : MeasurableSet s) :
+      IntervalIntegrable (s.indicator (fun _ => (1:ℝ))) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (intervalIntegrable_const : IntervalIntegrable (fun _ => (1:ℝ)) MeasureTheory.volume 0 1)).indicator hs
+  rw [heq]
+  apply le_trans _ (upperTail m hm)
+  change (∫ t in (0:ℝ)..1, ((GoldbachBudget.arcs n)ᶜ ∩ A).indicator (fun _ => (1:ℝ)) t) ≤
+    ∫ t in (0:ℝ)..1, A.indicator (fun _ => (1:ℝ)) t
+  apply intervalIntegral.integral_mono_on (by norm_num)
+    (integ ((GoldbachBudget.measurableArcs n).compl.inter hA)) (integ hA)
+  intro t _
+  by_cases ht : t ∈ A <;> by_cases hs : t ∈ (GoldbachBudget.arcs n)ᶜ <;> simp [ht,hs]
+
+/-- The real one-sided exception remains small after multiplying by any fixed log power. -/
+theorem maskLogDecay (d : ℕ) (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, (1+Real.log (n:ℝ))^d *
+      (∫ t in (0:ℝ)..1, (resonant n).indicator (fun _ => (1:ℝ)) t) ≤ ε := by
+  have ht : Filter.Tendsto (fun x : ℝ => x^d * Real.exp (-(1/8:ℝ)*x))
+      Filter.atTop (nhds 0) := by
+    simpa only [Real.rpow_natCast] using
+      tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero (d:ℝ) (1/8) (by norm_num)
+  have hε' : 0 < ε/(5:ℝ)^d := by positivity
+  obtain ⟨R,hR⟩ := Filter.eventually_atTop.mp (ht.eventually_lt_const hε')
+  obtain ⟨M,hM⟩ := exists_nat_ge R
+  refine ⟨max 1 (2^(2*M)), ?_⟩
+  intro n hn
+  have hn1 : 1 ≤ n := by omega
+  have hlog := Nat.le_log_of_pow_le (by decide : 1 < 2) (show 2^(2*M) ≤ n by omega)
+  have hl1 : 1 ≤ length n := le_max_left _ _
+  have hlM : M ≤ length n := by unfold length; omega
+  have htM := hR (length n:ℝ) (hM.trans (by exact_mod_cast hlM))
+  have hn0 : 0 < (n:ℝ) := by exact_mod_cast (show 0 < n by omega)
+  have hx : (n:ℝ) < (2:ℝ)^((Nat.log 2 n)+1) := by exact_mod_cast Nat.lt_pow_succ_log_self (by decide : 1<2) n
+  have hln := Real.log_le_log hn0 hx.le
+  rw [Real.log_pow] at hln
+  have hceil : Nat.log 2 n + 1 ≤ 2*length n+2 := by unfold length; omega
+  have hrceil : ((Nat.log 2 n + 1:ℕ):ℝ) ≤ 2*(length n:ℝ)+2 := by exact_mod_cast hceil
+  have ht2 : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos (by norm_num : (0:ℝ)<2)]
+  have hpoly : 1+Real.log (n:ℝ) ≤ 5*(length n:ℝ) := by
+    have hh := mul_le_mul_of_nonneg_left ht2 (Nat.cast_nonneg (α := ℝ) (Nat.log 2 n + 1))
+    have hl : (1:ℝ) ≤ length n := by exact_mod_cast hl1
+    linarith
+  have hnon : 0 ≤ 1+Real.log (n:ℝ) := by linarith [Real.log_nonneg (show (1:ℝ) ≤ n by exact_mod_cast hn1)]
+  calc
+    _ ≤ (1+Real.log (n:ℝ))^d * Real.exp (-(length n:ℝ)/8) :=
+      mul_le_mul_of_nonneg_left (maskedArea n) (pow_nonneg hnon _)
+    _ ≤ (5*(length n:ℝ))^d * Real.exp (-(length n:ℝ)/8) :=
+      mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hnon hpoly _) (Real.exp_pos _).le
+    _ ≤ ε := by
+      rw [mul_pow, mul_assoc, show -(length n:ℝ)/8 = -(1/8:ℝ)*(length n:ℝ) by ring]
+      have hh := (lt_div_iff₀ (by positivity : 0 < (5:ℝ)^d)).mp htM
+      linarith only [hh]
 
 end
 end GoldbachPacket
