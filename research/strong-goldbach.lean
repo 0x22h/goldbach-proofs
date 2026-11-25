@@ -101,6 +101,47 @@ private def J (n : ℕ) (v : ℝ → ℝ) :=
     (fun u => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) t)
     0 1 MeasureTheory.volume).re
 
+private theorem measurableArcs (n : ℕ) : MeasurableSet (arcs n) := by
+  let Q := (Nat.log 2 (n+2))^2
+  let Index := {p : ℕ × ℕ // 1 ≤ p.1 ∧ p.1 ≤ Q ∧ p.2 ≤ p.1 ∧ p.2.Coprime p.1}
+  have cover : arcs n = ⋃ i : Index,
+      {t : ℝ | |t-(i.val.2:ℝ)/(i.val.1:ℝ)| ≤ (Q:ℝ)/((i.val.1:ℝ)*(n:ℝ))} := by
+    ext t
+    constructor
+    · rintro ⟨q,a,hq,hQ,ha,hc,ht⟩
+      exact Set.mem_iUnion.mpr ⟨⟨(q,a),hq,hQ,ha,hc⟩,ht⟩
+    · intro ht
+      obtain ⟨i,hi⟩ := Set.mem_iUnion.mp ht
+      exact ⟨i.val.1,i.val.2,i.property.1,i.property.2.1,i.property.2.2.1,i.property.2.2.2,hi⟩
+  rw [cover]
+  exact MeasurableSet.iUnion fun _ =>
+    (isClosed_le (continuous_abs.comp (continuous_id.sub continuous_const)) continuous_const).measurableSet
+
+theorem packetPartition (n : ℕ) :
+    (pair n (high n) (high n)).re = J n (K n) + J n (fun t => 1-K n t) := by
+  let F := fun t : ℝ => spec n (high n) t * spec n (high n) t * phase (-(n:ℝ)*t)
+  let T := fun (v : ℝ → ℝ) (t : ℝ) =>
+    (arcs n)ᶜ.indicator (fun u => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) t
+  have hK : Continuous (K n) := by unfold K; fun_prop
+  have integrable (v : ℝ → ℝ) (hv : Continuous v) :
+      IntervalIntegrable (T v) MeasureTheory.volume (0:ℝ) 1 := by
+    have cont : Continuous (fun u : ℝ => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) := by
+      unfold spec phase
+      fun_prop
+    have h := cont.intervalIntegrable (μ := MeasureTheory.volume) 0 1
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)] at h ⊢
+    exact h.indicator (measurableArcs n).compl
+  have partition : (fun t => (arcs n)ᶜ.indicator F t) =
+      fun t => T (K n) t + T (fun u => 1-K n u) t := by
+    funext t
+    by_cases ht : t ∈ (arcs n)ᶜ
+    · simp only [F, T, Set.indicator_of_mem ht, Complex.ofReal_sub, Complex.ofReal_one]
+      ring
+    · simp [T, ht]
+  unfold pair J
+  change (intervalIntegral (fun t => (arcs n)ᶜ.indicator F t) 0 1 MeasureTheory.volume).re = _
+  rw [partition, intervalIntegral.integral_add (integrable _ hK) (integrable _ (continuous_const.sub hK))] <;> rfl
+
 theorem packetToBulk
     (packet : ∃ P : ℕ, ∀ n ≥ P, Even n → -(n:ℝ)/576 ≤ J n (K n))
     (defect : ∃ D : ℕ, ∀ n ≥ D, Even n → -(n:ℝ)/576 ≤ J n (fun t => 1-K n t))
