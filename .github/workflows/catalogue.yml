@@ -70,6 +70,10 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-model-from-center-counts": "(fun a b => GoldbachPacket.modelFromCenters (GoldbachPacket.combineCenterCounts a b))",
+              "L-goldbach-packet-short-order-peak-overlap-from-full": "GoldbachPacket.modelRegionFromFull true",
+              "L-goldbach-packet-remaining-peak-overlap-from-full": "GoldbachPacket.modelRegionFromFull false",
+              "L-goldbach-packet-short-centers-from-moduli": "GoldbachPacket.shortCentersFromModuli",
               "L-goldbach-packet-rational-center-stability": "GoldbachPacket.rationalCenterStability",
               "L-goldbach-packet-rational-peak-far-tails": "GoldbachPacket.farTails",
               "L-goldbach-packet-mangoldt-uniform-spectral-error": "GoldbachPacket.mangoldtSpectralError",

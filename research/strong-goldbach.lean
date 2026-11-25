@@ -2137,13 +2137,13 @@ private theorem packetVariation (m : ℕ) (hm : 0< m) (x y : ℝ) :
       apply (Real.abs_cos_sub_cos_le (f*x) (f*y)).trans
       rw [← mul_sub,abs_mul,abs_of_nonneg (by dsimp [f]; positivity : 0 ≤ f)]
       dsimp [f,C]
-      gcongr
-      exact Finset.mem_range.mp hj
-    _ = _ := by simp [C]; ring
+      gcongr <;> first | exact Finset.mem_range.mp hj | norm_num
+    _ = _ := by simp [C] <;> ring
 
 private theorem exponentialRoom (m : ℕ) (hm : 128≤ m) :
     48*(2*(m:ℝ)+3)^4 ≤ (2:ℝ)^m := by
   obtain ⟨k,rfl⟩ := Nat.exists_eq_add_of_le hm
+  clear hm
   induction k with
   | zero => norm_num
   | succ k ih =>
@@ -2154,7 +2154,7 @@ private theorem exponentialRoom (m : ℕ) (hm : 128≤ m) :
         ring_nf
         positivity
       _ ≤ 2*(2:ℝ)^(128+k) := by linarith only [ih]
-      _ = _ := by rw [pow_succ]; ring
+      _ = _ := by rw [show 128+(k+1)=(128+k)+1 by omega,pow_succ]; ring
 
 theorem rationalCenterStability : ∃ N : ℕ, ∀ n ≥ N, ∀ x y : ℝ,
     |x-y| ≤ (gridQ n:ℝ)^2/(n:ℝ) → (1:ℝ)/2 < packet (length n) x/(length n:ℝ) →
@@ -2279,7 +2279,7 @@ theorem modelFromCenters
   refine ⟨max 1 (max K (max F C)), ?_⟩
   intro n hn
   have hn' : 0<n := by omega
-  have g : 1 ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by norm_num; omega)
+  have g : 1 ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by norm_num <;> omega)
   have hQ : 0<gridQ n := by unfold gridQ; positivity
   let D := Finset.Icc 1 ((gridQ n)^2)
   let P := 8*Real.pi*(n:ℝ)
@@ -2320,7 +2320,7 @@ theorem modelFromCenters
     ring
   calc
     _ = ∑ q ∈ D, integralOn (resonant n) (fun t => ∑ a ∈ numerators q, profile n q ((a:ℝ)/(q:ℝ)) t) := by
-      apply onFiniteSum
+      apply onFiniteSum D (measurableMask n)
       intro q hq
       apply continuous_finsetSum
       intro a _
@@ -2350,11 +2350,10 @@ theorem combineCenterCounts
   rw [← Finset.sum_filter_add_sum_filter_not (Finset.Icc 1 ((gridQ n)^2)) (lowOrderTest n)]
   linarith only [hA n (by omega),hB n (by omega)]
 
-theorem modelRegionFromCounts (slow : Bool)
-    (counts : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
-      (∑ q ∈ Finset.Icc 1 ((gridQ n)^2), centerWeight n q) ≤ ε) :
+theorem modelRegionFromFull (slow : Bool)
+    (model : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, integralOn (resonant n) (peaks n) ≤ ε*(n:ℝ)) :
     ∃ N : ℕ, ∀ n ≥ N, Even n → integralOn (shellRegion n slow) (peaks n) ≤ (n:ℝ)/4608 := by
-  obtain ⟨N,hN⟩ := modelFromCenters counts (1/4608) (by norm_num)
+  obtain ⟨N,hN⟩ := model (1/4608) (by norm_num)
   refine ⟨N, ?_⟩
   intro n hn _
   have hm := (measurableMask n).inter (measurableWindows n (fun _ => True))

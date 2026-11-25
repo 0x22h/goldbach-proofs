@@ -1055,6 +1055,132 @@
       "parallel": true,
       "assumptions": [],
       "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-all-rational-model-mass",
+      "statement": "let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, m (B n) (G n) ≤ ε*(n:ℝ)",
+      "plain_statement": {
+        "zh": "整个共振区上全部有理峰的质量为 o(n)",
+        "en": "All rational peaks have sublinear mass on the full resonant mask"
+      },
+      "brief": {
+        "zh": "较强的共同目标。切去所有峰远尾；每个检测到的中心只收费一次。对原主弧分母保留中心切口 q/Q，并计入区间端点。",
+        "en": "A shared stronger target. Discard the combined far tails and charge each detected center once. Retain the q/Q core discount for original major-arc denominators, including endpoints."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-model-from-center-counts",
+      "statement": "(let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => o n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ)) * (((Finset.range (q+1)).filter (fun a => Nat.Coprime a q ∧ (1:ℝ)/3 < K n ((a:ℝ)/(q:ℝ)))).card:ℝ) / (Nat.totient q:ℝ)^2) ≤ ε) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => ¬ o n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ)) * (((Finset.range (q+1)).filter (fun a => Nat.Coprime a q ∧ (1:ℝ)/3 < K n ((a:ℝ)/(q:ℝ)))).card:ℝ) / (Nat.totient q:ℝ)^2) ≤ ε) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, m (B n) (G n) ≤ ε*(n:ℝ))",
+      "plain_statement": {
+        "zh": "由两类离散中心计数推出整个模型质量界",
+        "en": "Recover total model mass from two discrete center counts"
+      },
+      "brief": {
+        "zh": "将两个分母族的加权计数相加。近场的非零贡献要求中心处 K>1/3，单峰代价至多 8πn min(1,q/Q)/φ(q)²；其余收费归入已经控制的远尾。",
+        "en": "Sum the two weighted counts. A contributing near field requires K>1/3 at its center, costing at most 8πn min(1,q/Q)/φ(q)² per center. The remaining contributions are covered by the proved far-tail estimate."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-short-order-peak-overlap-from-full",
+      "statement": "(let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, m (B n) (G n) ≤ ε*(n:ℝ)) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let W := fun (n : ℕ) (p : ℕ → Prop) => {t : ℝ | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (Q n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ p q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ ((Q n:ℝ)^2)/((q:ℝ)*(n:ℝ))}; let o := fun n q : ℕ => Odd q ∧ ∃ j : ℕ, 1 ≤ j ∧ j ≤ (Nat.log 2 (Q n)+1)^2 ∧ q ∣ 2^j-1; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → m ((B n ∩ (W n (fun _ => True))) ∩ W n (o n)) (G n) ≤ (n:ℝ)/4608)",
+      "plain_statement": {
+        "zh": "由全模型质量取得该窗口的预算",
+        "en": "Restrict the full model mass to this class of windows"
+      },
+      "brief": {
+        "zh": "模型非负，积分区域包含于共振区，取 ε=1/4608。",
+        "en": "Restrict the nonnegative integrand to the regional subset and take ε=1/4608."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-remaining-peak-overlap-from-full",
+      "statement": "(let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, m (B n) (G n) ≤ ε*(n:ℝ)) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let W := fun (n : ℕ) (p : ℕ → Prop) => {t : ℝ | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (Q n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ p q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ ((Q n:ℝ)^2)/((q:ℝ)*(n:ℝ))}; let o := fun n q : ℕ => Odd q ∧ ∃ j : ℕ, 1 ≤ j ∧ j ≤ (Nat.log 2 (Q n)+1)^2 ∧ q ∣ 2^j-1; let G := fun (n : ℕ) (t : ℝ) => ∑ q ∈ Finset.Icc 1 ((Q n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q), 4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)); let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → m ((B n ∩ (W n (fun _ => True))) \\ W n (o n)) (G n) ≤ (n:ℝ)/4608)",
+      "plain_statement": {
+        "zh": "由全模型质量取得该窗口的预算",
+        "en": "Restrict the full model mass to this class of windows"
+      },
+      "brief": {
+        "zh": "模型非负，积分区域包含于共振区，取 ε=1/4608。",
+        "en": "Restrict the nonnegative integrand to the regional subset and take ε=1/4608."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-smooth-moduli-weight",
+      "statement": "let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let smooth := fun n q : ℕ => ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (Q n))^8; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => smooth n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ))/(Nat.totient q:ℝ)) ≤ ε",
+      "plain_statement": {
+        "zh": "所有小素因子分母的加权总量趋零",
+        "en": "Vanishing weight of smooth denominators"
+      },
+      "brief": {
+        "zh": "算术猜想，允许全部 (1+log₂ Q)⁸ 光滑分母。先用 q/Q 控制小分母，再尝试用 Rankin 界估计较大光滑数及其 1/φ(q) 权重。",
+        "en": "Allow every denominator whose prime factors are at most (1+log₂ Q)⁸. Use q/Q for small q and try a Rankin bound for the weighted smooth-number tail."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-short-period-large-prime-weight",
+      "statement": "let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; let smooth := fun n q : ℕ => ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (Q n))^8; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => o n q ∧ ¬smooth n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ))/(Nat.totient q:ℝ)) ≤ ε",
+      "plain_statement": {
+        "zh": "短周期且含大素因子的分母总权趋零",
+        "en": "Vanishing weight of short-period moduli with a large prime factor"
+      },
+      "brief": {
+        "zh": "若大素数 p 整除这样的 q，则 p 整除某个 2ʲ−1，且 j≤(1+log₂ Q)²。可先限制这些 p 的倒数和，再对余因子求和；需处理素数重数和 φ 权重。",
+        "en": "Each such large prime divides 2ʲ−1 for some j≤(1+log₂ Q)². Bound the reciprocal mass of these primes, then sum the cofactors, accounting for multiplicity and totient weights."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-short-centers-from-moduli",
+      "statement": "(let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let smooth := fun n q : ℕ => ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (Q n))^8; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => smooth n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ))/(Nat.totient q:ℝ)) ≤ ε) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; let smooth := fun n q : ℕ => ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (Q n))^8; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => o n q ∧ ¬smooth n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ))/(Nat.totient q:ℝ)) ≤ ε) → (let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => o n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ)) * (((Finset.range (q+1)).filter (fun a => Nat.Coprime a q ∧ (1:ℝ)/3 < K n ((a:ℝ)/(q:ℝ)))).card:ℝ) / (Nat.totient q:ℝ)^2) ≤ ε)",
+      "plain_statement": {
+        "zh": "两类分母估计足以控制短周期中心",
+        "en": "Bound short-order centers from two denominator populations"
+      },
+      "brief": {
+        "zh": "对每个 q，候选分子最多 2φ(q)，包含 q=1 的两个端点。光滑与非光滑分母分别给 ε/4；无须假设短周期轨道均匀分布。",
+        "en": "At most 2φ(q) numerators occur, including both endpoints at q=1. Allocate ε/4 to each denominator family without assuming that short orbits are equidistributed."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
     }
   ],
   "links": [
@@ -1342,18 +1468,6 @@
       }
     },
     {
-      "kind": "exploration",
-      "inputs": [
-        "L-goldbach-packet-rational-center-stability",
-        "L-goldbach-packet-short-order-center-count"
-      ],
-      "output": "L-goldbach-packet-short-order-peak-overlap",
-      "explanation": {
-        "zh": "先把连续掩码移到有理中心；还需峰尾估计、近邻中心分离及旧主弧截断。",
-        "en": "Move the continuous mask to rational centers; tails, center separation and the removed cores still require estimates."
-      }
-    },
-    {
       "kind": "input",
       "inputs": [
         "L-goldbach-packet-binary-orbit-second-moment"
@@ -1362,18 +1476,6 @@
       "explanation": {
         "zh": "从有限群二阶矩估计越过 1/3 阈值的分子数；加权求和另需数论输入。",
         "en": "Use the finite-group second moment for threshold counts; the weighted denominator sum still needs arithmetic input."
-      }
-    },
-    {
-      "kind": "exploration",
-      "inputs": [
-        "L-goldbach-packet-rational-center-stability",
-        "L-goldbach-packet-remaining-center-count"
-      ],
-      "output": "L-goldbach-packet-remaining-peak-overlap",
-      "explanation": {
-        "zh": "先把连续掩码移到有理中心；还需峰尾估计、近邻中心分离及旧主弧截断。",
-        "en": "Move the continuous mask to rational centers; tails, center separation and the removed cores still require estimates."
       }
     },
     {
@@ -1478,6 +1580,78 @@
         "en": "Transfer the full Mangoldt energy bound to the upper prime spectrum using the proved perturbation bound."
       },
       "bridge": "L-goldbach-packet-energy-from-mangoldt"
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-short-order-center-count",
+        "L-goldbach-packet-remaining-center-count"
+      ],
+      "output": "L-goldbach-packet-all-rational-model-mass",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "将两个分母族的加权计数相加。近场的非零贡献要求中心处 K>1/3，单峰代价至多 8πn min(1,q/Q)/φ(q)²；其余收费归入已经控制的远尾。",
+        "en": "Sum the two weighted counts. A contributing near field requires K>1/3 at its center, costing at most 8πn min(1,q/Q)/φ(q)² per center. The remaining contributions are covered by the proved far-tail estimate."
+      },
+      "bridge": "L-goldbach-packet-model-from-center-counts"
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-rational-peak-far-tails"
+      ],
+      "output": "L-goldbach-packet-model-from-center-counts",
+      "kind": "input",
+      "explanation": {
+        "zh": "用于同一中心在窗口外的估计或窗口内的检测。",
+        "en": "Controls its tail outside the window or detects its center inside the window."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-rational-center-stability"
+      ],
+      "output": "L-goldbach-packet-model-from-center-counts",
+      "kind": "input",
+      "explanation": {
+        "zh": "用于同一中心在窗口外的估计或窗口内的检测。",
+        "en": "Controls its tail outside the window or detects its center inside the window."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-all-rational-model-mass"
+      ],
+      "output": "L-goldbach-packet-short-order-peak-overlap",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "模型非负，积分区域包含于共振区，取 ε=1/4608。",
+        "en": "Restrict the nonnegative integrand to the regional subset and take ε=1/4608."
+      },
+      "bridge": "L-goldbach-packet-short-order-peak-overlap-from-full"
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-all-rational-model-mass"
+      ],
+      "output": "L-goldbach-packet-remaining-peak-overlap",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "模型非负，积分区域包含于共振区，取 ε=1/4608。",
+        "en": "Restrict the nonnegative integrand to the regional subset and take ε=1/4608."
+      },
+      "bridge": "L-goldbach-packet-remaining-peak-overlap-from-full"
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-smooth-moduli-weight",
+        "L-goldbach-packet-short-period-large-prime-weight"
+      ],
+      "output": "L-goldbach-packet-short-order-center-count",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "对每个 q，候选分子最多 2φ(q)，包含 q=1 的两个端点。光滑与非光滑分母分别给 ε/4；无须假设短周期轨道均匀分布。",
+        "en": "At most 2φ(q) numerators occur, including both endpoints at q=1. Allocate ε/4 to each denominator family without assuming that short orbits are equidistributed."
+      },
+      "bridge": "L-goldbach-packet-short-centers-from-moduli"
     }
   ],
   "route_note": {

@@ -1,0 +1,21 @@
+{
+  "id": "L-goldbach-packet-short-period-large-prime-weight",
+  "statement": "let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let o := fun n q : ℕ => q % 2 = 1 ∧ ((Finset.Icc 1 ((Nat.log 2 (Q n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty; let smooth := fun n q : ℕ => ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (Q n))^8; ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, (∑ q ∈ (Finset.Icc 1 ((Q n)^2)).filter (fun q => o n q ∧ ¬smooth n q), min (1:ℝ) ((q:ℝ)/(Q n:ℝ))/(Nat.totient q:ℝ)) ≤ ε",
+  "plain_statement": {
+    "zh": "短周期且含大素因子的分母总权趋零",
+    "en": "Vanishing weight of short-period moduli with a large prime factor"
+  },
+  "brief": {
+    "zh": "若大素数 p 整除这样的 q，则 p 整除某个 2ʲ−1，且 j≤(1+log₂ Q)²。可先限制这些 p 的倒数和，再对余因子求和；需处理素数重数和 φ 权重。",
+    "en": "Each such large prime divides 2ʲ−1 for some j≤(1+log₂ Q)². Bound the reciprocal mass of these primes, then sum the cofactors, accounting for multiplicity and totient weights."
+  },
+  "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+  "program": "correlation",
+  "parallel": true,
+  "depends_on": [],
+  "file": "lean/PEqualNP/Outside/L_goldbach_packet_short_period_large_prime_weight.lean",
+  "module": "PEqualNP.Outside.L_goldbach_packet_short_period_large_prime_weight",
+  "imports": [],
+  "track": "minor-truncation",
+  "role": "target"
+}
