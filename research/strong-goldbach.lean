@@ -1616,8 +1616,9 @@ theorem lowPeaksSublinear (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n ≥ N,
       _ ≤ 1 := by rw [← Real.exp_zero]; exact Real.exp_le_exp.mpr (by linarith)
   have prod := mul_le_mul h₁ damp (by positivity) (sq_nonneg ε)
   have hs : (2:ℝ)^m*x^4*A ≤ ε := by
-    apply le_of_sq_le_sq_of_nonneg _ hε.le
-    nlinarith only [prod]
+    by_contra! h
+    have hdiff := mul_pos (sub_pos.mpr h) (by linarith : 0 < (2:ℝ)^m*x^4*A+ε)
+    nlinarith only [prod,hdiff]
   let C := level n m
   have hc := heightPositive n m
   have hmS : MeasurableSet (smallPeaks n) :=
@@ -1664,8 +1665,9 @@ private theorem lastHeight (n : ℕ) (hn : 1 ≤ n) (t : ℝ) : density n t ≤ 
   have hp : 4*(n:ℝ) ≤ (2:ℝ)^lastLevel n := by
     change _ ≤ (2:ℝ)^((Nat.log 2 n+1)+2)
     rw [pow_add]; nlinarith only [he]
-  have xx : x^2 ≤ x^4 := by nlinarith [mul_nonneg (sub_nonneg.mpr hx) (by positivity : 0≤x+1),
-    sq_nonneg (x^2-1)]
+  have xx : x^2 ≤ x^4 := by
+    have hu : 1 ≤ x^2 := by nlinarith [sq_nonneg (x-1)]
+    nlinarith [mul_nonneg (sub_nonneg.mpr hu) (sq_nonneg x)]
   calc
     _ ≤ (2*(n:ℝ)*x)^2 := pow_le_pow_left₀ (norm_nonneg _) mag 2
     _ = (4*(n:ℝ))*((n:ℝ)*x^2) := by ring
@@ -1682,7 +1684,7 @@ private theorem bandStep (n j : ℕ) : regionMass n (above n j) =
     constructor
     · exact fun h => ⟨h.1.1,h.2⟩
     · intro h
-      have hi := h.2
+      have hi : level n (j+1) < density n t := h.2
       rw [heightSucc] at hi
       exact ⟨⟨h.1,by linarith [heightPositive n j]⟩,h.2⟩
   have lower : above n j \ s = bin n j := by
@@ -1785,7 +1787,7 @@ theorem spikesFromLateLevels
       · have top : t ∈ above n i := ⟨hh.1,lt_of_not_ge h⟩
         have small : t ∉ smallPeaks n := fun h' => h h'.2
         simp [hh,small,top]
-    · by_cases a : t ∈ above n i <;> by_cases c : t ∈ smallPeaks n <;> simp [hh,a,c,nn,add_nonneg]
+    · by_cases a : t ∈ above n i <;> by_cases c : t ∈ smallPeaks n <;> simp [hh,a,c,nn]
   linarith only [maj,ht,hM n (by omega)]
 
 end

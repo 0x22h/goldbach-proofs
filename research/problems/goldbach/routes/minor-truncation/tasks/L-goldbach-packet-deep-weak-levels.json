@@ -6,8 +6,8 @@
     "en": "Dyadic level-set conjecture for large values on deep minor arcs"
   },
   "brief": {
-    "zh": "一种可证伪的较强猜想。估计单个高度层所占面积，允许零星极高峰。可从大筛的采样点间距入手；尝试找出违反界的层。需再核实非空层数及常数才能恢复积分预算。",
-    "en": "A stronger testable conjecture: bound one height bin rather than the maximum. Try large-sieve spacing, or identify a violating level. Summing the bins still requires a height cutoff and constants."
+    "zh": "这是较强的单层面积猜想。可从大筛的采样点间距入手，也可寻找违反界的层。限制到有效层后可推出深次弧大峰值总预算。",
+    "en": "This stronger conjecture bounds each height bin. Try large-sieve spacing or identify a violating bin. Restriction to surviving heights suffices for the integrated spike budget."
   },
   "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
   "program": "correlation",

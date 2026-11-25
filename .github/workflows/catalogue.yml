@@ -70,6 +70,8 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-resonant-low-peaks": "GoldbachPacket.lowPeaksSublinear",
+              "L-goldbach-packet-spikes-from-late-levels": "GoldbachPacket.spikesFromLateLevels",
               "L-goldbach-packet-progression-leakage": "GoldbachPacket.progressionLeakage",
               "L-goldbach-packet-divisor-mixture-leakage": "GoldbachPacket.divisorMixtureLeakage",
               "L-goldbach-packet-deep-moderate-values": "GoldbachPacket.deepFloorBudget",
@@ -110,6 +112,11 @@ jobs:
           far = frozen["L-goldbach-packet-long-wheel-excess"]
           energy = frozen["L-goldbach-packet-resonant-prime-energy"]
           lines.append(f"example : ({far}) → ({energy}) := GoldbachPacket.maskedEnergyFromLong")
+          levels = frozen["L-goldbach-packet-deep-weak-levels"]
+          spike = frozen["L-goldbach-packet-deep-spike-energy"]
+          lines.append(f"example : ({levels}) → ({spike}) := by "
+                       "rintro ⟨N, h⟩; apply GoldbachPacket.spikesFromLateLevels; "
+                       "exact ⟨N, fun n hn he j _ _ => h n hn he j⟩")
           (Path(os.environ["RUNNER_TEMP"]) / "Catalogue.lean").write_text("\n".join(lines) + "\n")
           print(f"Type-checking {len(gaps)} propositions")
           PY

@@ -830,8 +830,8 @@
         "en": "Dyadic level-set conjecture for large values on deep minor arcs"
       },
       "brief": {
-        "zh": "一种可证伪的较强猜想。估计单个高度层所占面积，允许零星极高峰。可从大筛的采样点间距入手；尝试找出违反界的层。需再核实非空层数及常数才能恢复积分预算。",
-        "en": "A stronger testable conjecture: bound one height bin rather than the maximum. Try large-sieve spacing, or identify a violating level. Summing the bins still requires a height cutoff and constants."
+        "zh": "这是较强的单层面积猜想。可从大筛的采样点间距入手，也可寻找违反界的层。限制到有效层后可推出深次弧大峰值总预算。",
+        "en": "This stronger conjecture bounds each height bin. Try large-sieve spacing or identify a violating bin. Restriction to surviving heights suffices for the integrated spike budget."
       },
       "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
       "route": "minor-truncation",
@@ -922,6 +922,60 @@
       "brief": {
         "zh": "以共同半径 Q²/n 截断每一个中心。逐峰积分再按 φ(q) 个分子求和；需要对 q≤Q² 的 1/φ(q) 总和给出足够节省。q=1 时包含两个区间端点。",
         "en": "Truncate each peak at the common radius Q²/n. Integrate its tail, then sum the reciprocal-totient cost. For q=1 the two interval endpoints both occur."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-deep-late-levels",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let W := fun (n : ℕ) (p : ℕ → Prop) => {t : ℝ | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (Q n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ p q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ ((Q n:ℝ)^2)/((q:ℝ)*(n:ℝ))}; let F := fun (n : ℕ) (t : ℝ) => ‖S n (high n) t‖^2; let T := fun n : ℕ => (n:ℝ)*(1+Real.log (n:ℝ))^4; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → ∀ j : ℕ, L n / 16 ≤ j → j < Nat.log 2 n + 3 → let y := (2:ℝ)^j*T n; y * m ((B n \\ (W n (fun _ => True))) ∩ {t : ℝ | y < F n t ∧ F n t ≤ 2*y}) (fun _ => (1:ℝ)) ≤ (n:ℝ)/(100000*(1+Real.log (n:ℝ))^2)",
+      "plain_statement": {
+        "zh": "只控制能消耗预算的深次弧峰高层",
+        "en": "Bound only the deep-minor height bins that can consume the budget"
+      },
+      "brief": {
+        "zh": "只估计 ⌊L/16⌋≤j<⌊log₂ n⌋+3 的层，门槛 y=2ʲn(1+log n)⁴ 为平方振幅。可研究超过门槛的大值点间距，或寻找使单层过密的共振结构。下方所有层的能量之和已有 o(n) 界，上方各层为空。",
+        "en": "For squared amplitude y=2ʲn(1+log n)⁴, estimate only floor(L/16)≤j<floor(log₂ n)+3. Study spacing of large values, or look for structures that overfill a bin. All lower levels together cost o(n); higher bins are empty."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-resonant-low-peaks",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let F := fun (n : ℕ) (t : ℝ) => ‖S n (high n) t‖^2; let T := fun n : ℕ => (n:ℝ)*(1+Real.log (n:ℝ))^4; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N, m (B n ∩ {t : ℝ | F n t ≤ (2:ℝ)^(L n / 16)*T n}) (F n) ≤ ε*(n:ℝ)",
+      "plain_statement": {
+        "zh": "共振区内低于增长门槛的全部素数能量为 o(n)",
+        "en": "All resonant prime energy below a growing cutoff is o(n)"
+      },
+      "brief": {
+        "zh": "同时利用掩码面积的指数界和带八次对数权的面积界，吸收 2^⌊L/16⌋。结论在整个共振区成立，无偶数或算术分布假设。",
+        "en": "Combine the exponential area bound with decay after eight logarithmic powers to absorb 2^floor(L/16). This holds on the full resonant mask, for either parity, without arithmetic hypotheses."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-spikes-from-late-levels",
+      "statement": "(let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let W := fun (n : ℕ) (p : ℕ → Prop) => {t : ℝ | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (Q n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ p q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ ((Q n:ℝ)^2)/((q:ℝ)*(n:ℝ))}; let F := fun (n : ℕ) (t : ℝ) => ‖S n (high n) t‖^2; let T := fun n : ℕ => (n:ℝ)*(1+Real.log (n:ℝ))^4; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → ∀ j : ℕ, L n / 16 ≤ j → j < Nat.log 2 n + 3 → let y := (2:ℝ)^j*T n; y * m ((B n \\ (W n (fun _ => True))) ∩ {t : ℝ | y < F n t ∧ F n t ≤ 2*y}) (fun _ => (1:ℝ)) ≤ (n:ℝ)/(100000*(1+Real.log (n:ℝ))^2)) → (let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let W := fun (n : ℕ) (p : ℕ → Prop) => {t : ℝ | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (Q n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ p q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ ((Q n:ℝ)^2)/((q:ℝ)*(n:ℝ))}; let F := fun (n : ℕ) (t : ℝ) => ‖S n (high n) t‖^2; let T := fun n : ℕ => (n:ℝ)*(1+Real.log (n:ℝ))^4; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → m ((B n \\ (W n (fun _ => True))) ∩ {t : ℝ | T n < F n t}) (F n) ≤ (n:ℝ)/2304)",
+      "plain_statement": {
+        "zh": "从有限个高峰层推出深次弧预算",
+        "en": "Deduce the deep-minor spike budget from the surviving height bins"
+      },
+      "brief": {
+        "zh": "每层上端纳入本层，下端归入前层。有限望远镜求和后给高层与低层各留 n/4608。高层总数最多 ⌊log₂ n⌋+3，系数 100000 足以守住预算。",
+        "en": "Use open lower and closed upper bin boundaries. Telescope the finite sum and allocate n/4608 to each of the low and high ranges. There are at most floor(log₂ n)+3 bins, within the numerical allowance."
       },
       "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
       "route": "minor-truncation",
@@ -1196,17 +1250,6 @@
     {
       "kind": "exploration",
       "inputs": [
-        "L-goldbach-packet-deep-weak-levels"
-      ],
-      "output": "L-goldbach-packet-deep-spike-energy",
-      "explanation": {
-        "zh": "分层面积提供另一种证明入口，层数与阈值换算未写作形式化归约。",
-        "en": "A possible layer-cake approach; the bin-count and threshold conversion are not a formal reduction."
-      }
-    },
-    {
-      "kind": "exploration",
-      "inputs": [
         "L-goldbach-packet-divisor-mixture-leakage"
       ],
       "output": "L-goldbach-packet-rational-peak-excess",
@@ -1282,6 +1325,52 @@
         "zh": "切除远尾以便把近峰与同一有理中心对应。",
         "en": "Remove far tails before matching near-peak mass to its own center."
       }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-deep-weak-levels"
+      ],
+      "output": "L-goldbach-packet-deep-late-levels",
+      "kind": "input",
+      "explanation": {
+        "zh": "限制分层指标即可，冻结的全层猜想也能推出父题。",
+        "en": "Restrict the index range; the original all-level conjecture also implies the parent."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-mask-log-decay",
+        "L-goldbach-packet-upper-tail-half"
+      ],
+      "output": "L-goldbach-packet-resonant-low-peaks",
+      "kind": "input",
+      "explanation": {
+        "zh": "带对数面积与指数面积合并，得到提高门槛后的能量预算。",
+        "en": "Use both logarithmic and exponential area estimates at the raised cutoff."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-resonant-low-peaks"
+      ],
+      "output": "L-goldbach-packet-spikes-from-late-levels",
+      "kind": "input",
+      "explanation": {
+        "zh": "以 ε=1/4608 控制未交给高层估计的整个低峰区。",
+        "en": "Apply ε=1/4608 to all discarded heights at once."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-deep-late-levels"
+      ],
+      "output": "L-goldbach-packet-deep-spike-energy",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "低峰预算与带上界的分层求和相加。",
+        "en": "Add the low-peak allowance and the finite upper sum."
+      },
+      "bridge": "L-goldbach-packet-spikes-from-late-levels"
     }
   ],
   "route_note": {
