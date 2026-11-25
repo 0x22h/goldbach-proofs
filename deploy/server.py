@@ -25,6 +25,8 @@ import sponsors
 SPONSOR_UPLOAD_SLOT = BoundedSemaphore(1)
 
 ROOT = Path(__file__).resolve().parent
+SITE_REVISION_FILE = ROOT / ".site-revision"
+SITE_REVISION = SITE_REVISION_FILE.read_text(encoding="ascii").strip() if SITE_REVISION_FILE.is_file() else None
 CREDS = Path(os.environ["CREDENTIALS_DIRECTORY"])
 SECRET = (CREDS / "webhook").read_bytes().strip()
 DB = Path(os.environ["STATE_DIRECTORY"]) / "verdicts.sqlite3"
@@ -587,7 +589,10 @@ class Handler(BaseHTTPRequestHandler):
         if desk is None:
             return self.reply(404, b'{}')
         if path == "/health":
-            return self.reply(200, json.dumps({"status":"ok","catalogue_revision":RELEASE_SHA}).encode())
+            return self.reply(200, json.dumps({
+                "status": "ok", "catalogue_revision": RELEASE_SHA,
+                "site_revision": SITE_REVISION,
+            }).encode())
         if path == "/research-changes":
             zh = self.language(url) == "zh"
             title = "研究路线变更记录" if zh else "Research change history"
