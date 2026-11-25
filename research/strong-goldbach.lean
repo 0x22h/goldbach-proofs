@@ -243,8 +243,10 @@ theorem capComparison (n : ℕ) :
   have hk : Continuous (K n) := by unfold K; fun_prop
   have hc : Continuous cap := hk.min continuous_const
   have he : Continuous excess := hk.sub hc
-  have hB : MeasurableSet B :=
-    (measurableArcs n).compl.inter (isOpen_lt continuous_const hk).measurableSet
+  have hB : MeasurableSet B := by
+    change MeasurableSet ((arcs n)ᶜ ∩ {t : ℝ | (1:ℝ)/2 < K n t})
+    exact (measurableArcs n).compl.inter
+      (isOpen_lt (continuous_const : Continuous (fun _ : ℝ => (1:ℝ)/2)) hk).measurableSet
   have henergy : Continuous energy := by unfold energy spec phase; fun_prop
   have hmask : IntervalIntegrable (B.indicator energy) MeasureTheory.volume (0:ℝ) 1 := by
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
@@ -270,7 +272,10 @@ theorem capComparison (n : ℕ) :
           unit, mul_one, Complex.norm_real, Real.norm_eq_abs, energy, pow_two, ← mul_assoc]
         gcongr <;> exact hx
       · have hb : t ∉ B := fun h => hp h.2
-        simp [kernelIntegrand, hm, hb, excess, cap, min_eq_left (le_of_not_gt hp)]
+        have hz : excess t = 0 := by
+          change K n t - min (K n t) (1/2) = 0
+          rw [min_eq_left (le_of_not_gt hp), sub_self]
+        simp [kernelIntegrand, hm, hb, hz]
     · have hb : t ∉ B := fun h => hm h.1
       simp [kernelIntegrand, hm, hb]
   have hi := intervalIntegral.norm_integral_le_of_norm_le
