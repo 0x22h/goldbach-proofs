@@ -826,7 +826,8 @@ private theorem pointwiseLagEnergy (n : ℕ) (a : ℕ → ℝ) (t : ℝ) :
   calc
     _ = (∑ k ∈ Finset.range (n+1), a k * Real.cos (angle k))^2 +
         (∑ k ∈ Finset.range (n+1), a k * Real.sin (angle k))^2 := by
-      simp only [Complex.sq_norm, Complex.normSq_apply, GoldbachBudget.spec, GoldbachBudget.phase,
+      rw [Complex.sq_norm, Complex.normSq_apply]
+      simp only [GoldbachBudget.spec, GoldbachBudget.phase,
         Complex.re_sum, Complex.im_sum, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
         Complex.ofReal_im, zero_mul, sub_zero, zero_add, add_zero, Complex.exp_ofReal_mul_I_re,
         Complex.exp_ofReal_mul_I_im, angle, pow_two]
@@ -875,8 +876,9 @@ theorem lagEnergyIdentity (n : ℕ) (a : ℕ → ℝ) :
     by_cases ht : t ∈ resonant n
     · simpa [f,A,H,ht] using pointwiseLagEnergy n a t
     · simp [f,ht]
-  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 :=
-    IntervalIntegrable.fun_sum fun h _ => hiA h
+  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 := by
+    simpa only [Finset.sum_apply] using (IntervalIntegrable.sum H (f := fun h t => A h * f h t)
+      (fun h _ => hiA h))
   have split : H = Finset.Icc 1 (min n ((length n)^2)) ∪ Finset.Icc ((length n)^2+1) n := by
     ext h; simp only [H,Finset.mem_union,Finset.mem_Icc]; omega
   have dis : Disjoint (Finset.Icc 1 (min n ((length n)^2))) (Finset.Icc ((length n)^2+1) n) := by
@@ -891,6 +893,65 @@ theorem lagEnergyIdentity (n : ℕ) (a : ℕ → ℝ) :
   unfold shortPart longPart
   dsimp only [A]
   ring
+
+/-- Exact Fourier decomposition of the modulus-30 model, with the endpoint in each residue class. -/
+theorem wheelGeometric (n : ℕ) (t : ℝ) :
+    GoldbachBudget.spec n wheel t = ((30:ℝ)/8:ℂ) *
+      ∑ r ∈ (Finset.range 30).filter (fun r => Nat.Coprime r 30 ∧ r ≤ n),
+        GoldbachBudget.phase ((r:ℝ)*t) *
+          ∑ j ∈ Finset.range ((n-r)/30+1), GoldbachBudget.phase ((30:ℝ)*(j:ℝ)*t) := by
+  let W := (Finset.range (n+1)).filter (fun k => Nat.Coprime k 30)
+  let R := (Finset.range 30).filter (fun r => Nat.Coprime r 30 ∧ r ≤ n)
+  let D := R.sigma (fun r => Finset.range ((n-r)/30+1))
+  let E := GoldbachBudget.phase
+  have cop (k : ℕ) : Nat.Coprime (k%30) 30 ↔ Nat.Coprime k 30 := by
+    unfold Nat.Coprime
+    rw [← Nat.gcd_rec 30 k, Nat.gcd_comm 30 k]
+  have addE (x y : ℝ) : E (x+y) = E x * E y := by
+    dsimp [E,GoldbachBudget.phase]
+    rw [← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  have wsum : GoldbachBudget.spec n wheel t = ((30:ℝ)/8:ℂ) * ∑ k ∈ W, E ((k:ℝ)*t) := by
+    rw [Finset.mul_sum]
+    unfold GoldbachBudget.spec
+    dsimp only [W]
+    rw [Finset.sum_filter]
+    apply Finset.sum_congr rfl
+    intro k _
+    by_cases hc : Nat.Coprime k 30 <;> simp [wheel,hc,E]
+  rw [wsum]
+  apply congrArg (fun z : ℂ => ((30:ℝ)/8:ℂ)*z)
+  calc
+    _ = ∑ d ∈ D, E ((d.1:ℝ)*t) * E (30*(d.2:ℝ)*t) := by
+      apply Finset.sum_nbij' (fun k : ℕ => (⟨k%30,k/30⟩ : Σ _ : ℕ, ℕ)) (fun d => d.1+30*d.2)
+      · intro k hk
+        simp only [W,Finset.mem_filter,Finset.mem_range] at hk
+        simp only [D,R,Finset.mem_sigma,Finset.mem_filter,Finset.mem_range]
+        exact ⟨⟨by omega, (cop k).mpr hk.2, by omega⟩,by omega⟩
+      · rintro ⟨r,j⟩ hd
+        simp only [D,R,Finset.mem_sigma,Finset.mem_filter,Finset.mem_range] at hd
+        simp only [W,Finset.mem_filter,Finset.mem_range]
+        refine ⟨by omega,(cop _).mp ?_⟩
+        simpa only [show (r+30*j)%30=r by omega] using hd.1.2.1
+      · intro k _; dsimp; omega
+      · rintro ⟨r,j⟩ hd
+        simp only [D,R,Finset.mem_sigma,Finset.mem_filter,Finset.mem_range] at hd
+        change (⟨(r+30*j)%30,(r+30*j)/30⟩ : Σ _ : ℕ, ℕ) = ⟨r,j⟩
+        rw [show (r+30*j)%30=r by omega, show (r+30*j)/30=j by omega]
+      · intro k _
+        change E ((k:ℝ)*t) = E (((k%30:ℕ):ℝ)*t) * E (30*((k/30:ℕ):ℝ)*t)
+        rw [← addE]
+        have he : (k:ℝ) = ((k%30:ℕ):ℝ)+30*((k/30:ℕ):ℝ) := by
+          exact_mod_cast (show k=k%30+30*(k/30) by omega)
+        congr 1
+        linear_combination t * he
+    _ = _ := by
+      rw [Finset.sum_sigma]
+      apply Finset.sum_congr rfl
+      intro r _
+      exact (Finset.mul_sum ..).symm
 
 end
 end GoldbachPacket
