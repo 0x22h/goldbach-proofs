@@ -88,15 +88,18 @@ class AttributionTests(unittest.TestCase):
                 (2, 'first', 'model-b', 'cursor', 'ACCEPTED'),
                 (3, 'second', 'model-a-v2', 'codex', 'ACCEPTED'),
                 (4, 'third', 'unknown', 'unknown', 'ACCEPTED'),
+                (6, 'fifth', 'model-c', 'unknown', 'ACCEPTED'),
+                (7, 'sixth', 'unknown', 'cursor', 'ACCEPTED'),
                 (5, 'fourth', 'model-b', 'cursor', 'REJECTED'),
             ]:
                 conn.execute("""INSERT INTO goldbach_leases (token_hash,gap,statement_sha256,handle,ip_key,claimed_at,expires_at,absolute_expires_at,run_id,finished_at,verdict,model,harness)
                     VALUES (?,?,'hash','alice','network',0,0,0,?,?,?,?,?)""", (str(run),gap,run,START+run,verdict,model,harness))
         status = self.helper.status(now=START+20)
         ranks = status['agent_rankings']
-        self.assertEqual(ranks['proofs'], status['rankings']['proofs'])
-        self.assertEqual(ranks['models'], [{'name': x, 'accepted': 1} for x in ['model-a', 'model-a-v2', 'unknown']])
-        self.assertEqual(ranks['harnesses'], [{'name': 'codex', 'accepted': 2}, {'name': 'unknown', 'accepted': 1}])
+        self.assertEqual(ranks['proofs'], 4)
+        self.assertEqual(status['rankings']['proofs'], 5)
+        self.assertEqual(ranks['models'], [{'name': x, 'accepted': 1} for x in ['model-a', 'model-a-v2', 'model-c']])
+        self.assertEqual(ranks['harnesses'], [{'name': 'codex', 'accepted': 2}, {'name': 'cursor', 'accepted': 1}])
         self.assertNotIn('ip_key', json.dumps(status))
         self.assertNotIn('token_hash', json.dumps(status))
 
