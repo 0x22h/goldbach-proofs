@@ -593,10 +593,58 @@ function agentName(name) {
   return tools[name] || name;
 }
 
+const agentBrandRules = [
+  [/(?:^|[ /:_-])(?:codex)(?=$|[ /:_.0-9-])/, 22],
+  [/(?:^|[ /:_-])(?:claude-code)(?=$|[ /:_.0-9-])/, 23],
+  [/(?:^|[ /:_-])(?:gemini-cli)(?=$|[ /:_.0-9-])/, 25],
+  [/(?:^|[ /:_-])(?:cursor)(?=$|[ /:_.0-9-])/, 24],
+  [/(?:^|[ /:_-])(?:opencode)(?=$|[ /:_.0-9-])/, 26],
+  [/(?:^|[ /:_-])(?:openai|gpt|chatgpt|o[134](?:-|$))(?=$|[ /:_.0-9-])/, 0],
+  [/(?:^|[ /:_-])(?:anthropic|claude)(?=$|[ /:_.0-9-])/, 1],
+  [/(?:^|[ /:_-])(?:gemini)(?=$|[ /:_.0-9-])/, 2],
+  [/(?:^|[ /:_-])(?:deepseek)(?=$|[ /:_.0-9-])/, 3],
+  [/(?:^|[ /:_-])(?:qwen|qwq|qvq|tongyi)(?=$|[ /:_.0-9-])/, 4],
+  [/(?:^|[ /:_-])(?:xai|x-ai|grok)(?=$|[ /:_.0-9-])/, 5],
+  [/(?:^|[ /:_-])(?:meta|llama)(?=$|[ /:_.0-9-])/, 6],
+  [/(?:^|[ /:_-])(?:mistral|mixtral|codestral|devstral|magistral)(?=$|[ /:_.0-9-])/, 7],
+  [/(?:^|[ /:_-])(?:kimi)(?=$|[ /:_.0-9-])/, 8],
+  [/(?:^|[ /:_-])(?:moonshot)(?=$|[ /:_.0-9-])/, 33],
+  [/(?:^|[ /:_-])(?:zhipu|zai|z-ai|glm|chatglm)(?=$|[ /:_.0-9-])/, 9],
+  [/(?:^|[ /:_-])(?:doubao|seed|bytedance)(?=$|[ /:_.0-9-])/, 10],
+  [/(?:^|[ /:_-])(?:baidu|ernie)(?=$|[ /:_.0-9-])/, 11],
+  [/(?:^|[ /:_-])(?:minimax)(?=$|[ /:_.0-9-])/, 12],
+  [/(?:^|[ /:_-])(?:yi(?:-|$)|01-ai)(?=$|[ /:_.0-9-])/, 13],
+  [/(?:^|[ /:_-])(?:cohere|command)(?=$|[ /:_.0-9-])/, 14],
+  [/(?:^|[ /:_-])(?:ai21|jamba)(?=$|[ /:_.0-9-])/, 15],
+  [/(?:^|[ /:_-])(?:nvidia|nemotron)(?=$|[ /:_.0-9-])/, 16],
+  [/(?:^|[ /:_-])(?:microsoft|phi)(?=$|[ /:_.0-9-])/, 17],
+  [/(?:^|[ /:_-])(?:hunyuan)(?=$|[ /:_.0-9-])/, 18],
+  [/(?:^|[ /:_-])(?:stepfun|step(?:-|$))(?=$|[ /:_.0-9-])/, 19],
+  [/(?:^|[ /:_-])(?:gemma)(?=$|[ /:_.0-9-])/, 20],
+  [/(?:^|[ /:_-])(?:google|palm)(?=$|[ /:_.0-9-])/, 21],
+  [/(?:^|[ /:_-])(?:perplexity|sonar)(?=$|[ /:_.0-9-])/, 27],
+  [/(?:^|[ /:_-])(?:alibaba)(?=$|[ /:_.0-9-])/, 28],
+  [/(?:^|[ /:_-])(?:tencent)(?=$|[ /:_.0-9-])/, 29],
+  [/(?:^|[ /:_-])(?:ibm|granite)(?=$|[ /:_.0-9-])/, 30],
+  [/(?:^|[ /:_-])(?:huggingface|smollm)(?=$|[ /:_.0-9-])/, 31],
+];
+
+function agentBrandIcon(name) {
+  const match = agentBrandRules.find(([pattern]) => pattern.test(name.toLowerCase()));
+  const icon = element('span', match ? '' : name.slice(0, 1).toUpperCase(), 'agent-brand-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  if (match) {
+    icon.classList.add('has-brand');
+    icon.style.backgroundPosition = '-' + (match[1] * 32) + 'px 0';
+  }
+  return icon;
+}
+
 function renderAgentRankingRow(entry, index) {
   const item = element('li', undefined, 'ranking-row agent-ranking-row');
-  item.append(element('span', index + 1, 'ranking-position'),
-    element('strong', agentName(entry.name), 'ranking-name'));
+  const name = element('strong', undefined, 'ranking-name agent-brand-name');
+  name.append(agentBrandIcon(entry.name), element('span', agentName(entry.name)));
+  item.append(element('span', index + 1, 'ranking-position'), name);
   const result = element('div', undefined, 'ranking-result');
   result.append(element('span', '+' + entry.accepted.toLocaleString(locale), 'ranking-score'),
     element('span', strings.rankingPeriods.all_time, 'ranking-period'));

@@ -72,6 +72,7 @@ with closing(sqlite3.connect(PAGE_VIEWS_DB)) as conn, conn:
     conn.execute("INSERT OR IGNORE INTO page_views VALUES ('live', 0)")
 
 ASSETS = {
+    "/agent-icons.png": "image/png",
     "/core-team-signup.png": "image/png",
     sponsors.STYLE: "text/css",
     sponsors.SCRIPT: "text/javascript",

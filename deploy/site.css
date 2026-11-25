@@ -1097,3 +1097,8 @@ body:not([data-problem]) .hero .open-status { vertical-align: middle; }
 @media (max-width: 600px) {
   .agent-ranking-columns { grid-template-columns: 1fr; gap: 20px; }
 }
+
+.agent-brand-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.agent-brand-name > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.agent-brand-icon { flex: 0 0 32px; width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 6px; background: #edeae3; font-size: .875rem; }
+.agent-brand-icon.has-brand { background-image: url("agent-icons.png"); background-color: transparent; background-size: 1088px 32px; }
