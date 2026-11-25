@@ -1456,5 +1456,103 @@ theorem energyFromRegions
   change regionMass n (resonant n) = _ + regionMass n (deep n) at e₁
   linarith only [e₁,e₂,e₃,hA n (by omega) he,hB n (by omega) he,hC n (by omega) he,hD n (by omega)]
 
+
+private def mixture (R : ℕ) (c : ℕ → ℝ) (M : ℕ → ℕ) (t : ℝ) :=
+  ∑ d ∈ Finset.Icc 1 R, (c d:ℂ) * progression d (M d) t
+
+theorem divisorMixtureLeakage (n R : ℕ) (c : ℕ → ℝ) (M : ℕ → ℕ) (hn : 0<n) (hQ : R ≤ gridQ n) :
+    minorMass n (fun t => ‖mixture R c M t‖^2) ≤
+      (2*Real.pi*(n:ℝ)/(gridQ n:ℝ))*(∑ d ∈ Finset.Icc 1 R, |c d|)^2 := by
+  let T := Finset.Icc 1 R
+  let b := ∑ d ∈ T, |c d|
+  let f := fun d t => ‖progression d (M d) t‖^2
+  let v := fun d => (GoldbachBudget.arcs n)ᶜ.indicator (f d)
+  have hb : 0 ≤ b := Finset.sum_nonneg fun _ _ => abs_nonneg _
+  have hc (d : ℕ) : Continuous (f d) := by unfold f progression GoldbachBudget.phase; fun_prop
+  have hv (d : ℕ) : IntervalIntegrable (fun t => |c d|*v d t) MeasureTheory.volume (0:ℝ) 1 :=
+    (minorIntegrable n (hc d)).const_mul _
+  have hs : IntervalIntegrable (fun t => ∑ d ∈ T, |c d|*v d t) MeasureTheory.volume (0:ℝ) 1 := by
+    have eq : (fun t => ∑ d ∈ T, |c d|*v d t) = ∑ d ∈ T, (fun t => |c d|*v d t) := by funext t; simp
+    rw [eq]
+    exact IntervalIntegrable.sum T (fun d _ => hv d)
+  have hmix : Continuous (fun t => ‖mixture R c M t‖^2) := by
+    unfold mixture progression GoldbachBudget.phase; fun_prop
+  let K := 2*Real.pi*(n:ℝ)/(gridQ n:ℝ)
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, b * (∑ d ∈ T, |c d|*v d t) := by
+      apply intervalIntegral.integral_mono_on (by norm_num) (minorIntegrable n hmix) (hs.const_mul b)
+      intro t _
+      by_cases ht : t ∈ (GoldbachBudget.arcs n)ᶜ
+      · simp only [v,Set.indicator_of_mem ht]
+        have htriangle : ‖mixture R c M t‖ ≤ ∑ d ∈ T, |c d|*‖progression d (M d) t‖ := by
+          simpa only [mixture,T,norm_mul,Complex.norm_real,Real.norm_eq_abs] using
+            (norm_sum_le T (fun d => (c d:ℂ)*progression d (M d) t))
+        apply (pow_le_pow_left₀ (norm_nonneg _) htriangle 2).trans
+        exact Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul T (fun d _ => abs_nonneg (c d))
+          (fun d _ => mul_nonneg (abs_nonneg _) (sq_nonneg _)) (fun d _ => by dsimp [f]; nlinarith only [])
+      · simp [v,ht]
+    _ = b * ∑ d ∈ T, |c d|*minorMass n (f d) := by
+      rw [intervalIntegral.integral_const_mul,intervalIntegral.integral_finsetSum (fun d _ => hv d)]
+      simp only [intervalIntegral.integral_const_mul,minorMass,v]
+    _ ≤ b * ∑ d ∈ T, |c d|*K := by
+      apply mul_le_mul_of_nonneg_left _ hb
+      apply Finset.sum_le_sum
+      intro d hd
+      obtain ⟨hl,hu⟩ := Finset.mem_Icc.mp hd
+      exact mul_le_mul_of_nonneg_left (progressionLeakage n d (M d) hn hl (hu.trans hQ)) (abs_nonneg _)
+    _ = _ := by rw [← Finset.sum_mul]; dsimp [b,T,K]; ring
+
+
+/-- A rational peak of width 1/n with its square Ramanujan coefficient bounded by 1/φ(q)^2. -/
+private def peaks (n : ℕ) (t : ℝ) : ℝ :=
+  ∑ q ∈ Finset.Icc 1 ((gridQ n)^2), ∑ a ∈ (Finset.range (q+1)).filter (fun a => Nat.Coprime a q),
+    4*(n:ℝ)^2 / ((Nat.totient q:ℝ)^2 * (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2))
+private def excess (n : ℕ) (t : ℝ) := max 0 (density n t - peaks n t)
+private def integralOn (s : Set ℝ) (f : ℝ → ℝ) := ∫ t in (0:ℝ)..1, s.indicator f t
+private def shellRegion (n : ℕ) (slow : Bool) :=
+  let s := resonant n ∩ rationalWindows n (fun _ => True)
+  let o := rationalWindows n (shortOrder n)
+  if slow then s ∩ o else s \ o
+
+theorem shellFromModel (slow : Bool)
+    (err : ∃ N : ℕ, ∀ n ≥ N, Even n → integralOn (rationalWindows n (fun _ => True)) (excess n) ≤ (n:ℝ)/4608)
+    (geom : ∃ N : ℕ, ∀ n ≥ N, Even n → integralOn (shellRegion n slow) (peaks n) ≤ (n:ℝ)/4608) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n (shellRegion n slow) ≤ (n:ℝ)/2304 := by
+  obtain ⟨A,hA⟩ := err
+  obtain ⟨B,hB⟩ := geom
+  refine ⟨max A B, ?_⟩
+  intro n hn he
+  let s := shellRegion n slow
+  let w := rationalWindows n (fun _ => True)
+  have hw := measurableWindows n (fun _ => True)
+  have hm := (measurableMask n).inter hw
+  have ho := measurableWindows n (shortOrder n)
+  have hs : MeasurableSet s := by cases slow; exact hm.diff ho; exact hm.inter ho
+  have sub : s ⊆ w := by cases slow <;> exact fun _ ht => ht.1.2
+  have hc : Continuous (peaks n) := by
+    unfold peaks
+    apply continuous_finset_sum
+    intro q hq
+    have hq' : 0<q := (Finset.mem_Icc.mp hq).1
+    have hp := Nat.totient_pos.mpr hq'
+    apply continuous_finset_sum
+    intro a _
+    apply Continuous.div <;> first | fun_prop | intro t; positivity
+  have hx : Continuous (excess n) := continuous_const.max ((continuousDensity n).sub hc)
+  have hsum := intervalIntegral.integral_add (onRegion hs hc) (onRegion hw hx)
+  have ma : regionMass n s ≤ integralOn s (peaks n) + integralOn w (excess n) := by
+    unfold integralOn
+    rw [← hsum]
+    apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hs (continuousDensity n))
+      ((onRegion hs hc).add (onRegion hw hx))
+    intro t _
+    by_cases ht : t ∈ s
+    · simp only [Set.indicator_of_mem ht,Set.indicator_of_mem (sub ht)]
+      dsimp [excess]
+      linarith only [le_max_right 0 (density n t-peaks n t)]
+    · by_cases h : t ∈ w <;> simp [ht,h,excess]
+  change regionMass n s ≤ _
+  linarith only [ma,hA n (by omega) he,hB n (by omega) he]
+
 end
 end GoldbachPacket

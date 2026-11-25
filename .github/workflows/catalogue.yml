@@ -63,6 +63,12 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-progression-leakage": "GoldbachPacket.progressionLeakage",
+              "L-goldbach-packet-divisor-mixture-leakage": "GoldbachPacket.divisorMixtureLeakage",
+              "L-goldbach-packet-deep-moderate-values": "GoldbachPacket.deepFloorBudget",
+              "L-goldbach-packet-energy-from-rational-regions": "GoldbachPacket.energyFromRegions",
+              "L-goldbach-packet-short-order-shell-from-model": "GoldbachPacket.shellFromModel true",
+              "L-goldbach-packet-remaining-rational-shell-from-model": "GoldbachPacket.shellFromModel false",
               "L-goldbach-packet-wheel-masked-budget": "GoldbachPacket.wheelMaskedBudget",
               "L-goldbach-packet-wheel-grid-tail": "GoldbachPacket.gridTail",
               "L-goldbach-packet-wheel-minor-leakage": "GoldbachPacket.wheelMinorLeakage",
