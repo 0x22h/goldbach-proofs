@@ -1559,5 +1559,234 @@ theorem shellFromModel (slow : Bool)
   change regionMass n s ≤ _
   linarith only [ma,hA n (by omega) he,hB n (by omega) he]
 
+
+private def level (n j : ℕ) := (2:ℝ)^j * ceilingEnergy n
+private def firstLevel (n : ℕ) := length n / 16
+private def lastLevel (n : ℕ) := Nat.log 2 n + 3
+private def above (n j : ℕ) := deep n ∩ {t | level n j < density n t}
+private def bin (n j : ℕ) := deep n ∩ {t | level n j < density n t ∧ density n t ≤ 2*level n j}
+private def smallPeaks (n : ℕ) := resonant n ∩ {t | density n t ≤ level n (firstLevel n)}
+
+private theorem heightPositive (n j : ℕ) : 0 ≤ level n j := by
+  unfold level ceilingEnergy
+  positivity
+
+private theorem heightSucc (n j : ℕ) : level n (j+1) = 2*level n j := by
+  unfold level; rw [pow_succ]; ring
+
+private theorem measurableDeep (n : ℕ) : MeasurableSet (deep n) :=
+  (measurableMask n).diff (measurableWindows n _)
+
+private theorem measurableAbove (n j : ℕ) : MeasurableSet (above n j) :=
+  (measurableDeep n).inter (isOpen_lt continuous_const (continuousDensity n)).measurableSet
+
+private theorem measurableBin (n j : ℕ) : MeasurableSet (bin n j) :=
+  (measurableDeep n).inter ((isOpen_lt continuous_const (continuousDensity n)).measurableSet.inter
+    (isClosed_le (continuousDensity n) continuous_const).measurableSet)
+
+/-- The entire resonant mask is inexpensive even at a polynomially raised amplitude cutoff. -/
+theorem lowPeaksSublinear (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n ≥ N,
+    regionMass n (smallPeaks n) ≤ ε*(n:ℝ) := by
+  obtain ⟨N,hN⟩ := maskLogDecay 8 (ε^2) (by positivity)
+  refine ⟨max N 1, ?_⟩
+  intro n hn
+  let x := 1+Real.log (n:ℝ)
+  let A := integralOn (resonant n) (fun _ => (1:ℝ))
+  let m := firstLevel n
+  have hx : 1 ≤ x := by
+    have h1 : (1:ℝ) ≤ n := by exact_mod_cast (show 1≤n by omega)
+    dsimp [x]; linarith [Real.log_nonneg h1]
+  have ha : 0 ≤ A := by
+    apply intervalIntegral.integral_nonneg (by norm_num)
+    intro t _; by_cases ht : t ∈ resonant n <;> simp [ht]
+  have h₁ : x^8*A ≤ ε^2 := hN n (by omega)
+  have h₂ : A ≤ Real.exp (-(length n:ℝ)/8) := maskedArea n
+  have hm : 16*m ≤ length n := by unfold m firstLevel; omega
+  have hmr : 2*(m:ℝ) ≤ (length n:ℝ)/8 := by
+    have hr : 16*(m:ℝ) ≤ (length n:ℝ) := by exact_mod_cast hm
+    linarith
+  have hmexp : (2:ℝ)^m ≤ Real.exp (m:ℝ) := by
+    have ht := pow_le_pow_left₀ (by norm_num : (0:ℝ) ≤ 2)
+      (by linarith [Real.add_one_le_exp (1:ℝ)] : (2:ℝ) ≤ Real.exp 1) m
+    simpa only [← Real.exp_nat_mul, mul_one] using ht
+  have damp : ((2:ℝ)^m)^2*A ≤ 1 := by
+    calc
+      _ ≤ (Real.exp (m:ℝ))^2 * Real.exp (-(length n:ℝ)/8) := by gcongr
+      _ = Real.exp (2*(m:ℝ)-(length n:ℝ)/8) := by rw [← Real.exp_nat_mul,← Real.exp_add]; congr 1; push_cast; ring
+      _ ≤ 1 := by rw [← Real.exp_zero]; exact Real.exp_le_exp.mpr (by linarith)
+  have prod := mul_le_mul h₁ damp (by positivity) (sq_nonneg ε)
+  have hs : (2:ℝ)^m*x^4*A ≤ ε := by
+    apply le_of_sq_le_sq_of_nonneg _ hε.le
+    nlinarith only [prod]
+  let C := level n m
+  have hc := heightPositive n m
+  have hmS : MeasurableSet (smallPeaks n) :=
+    (measurableMask n).inter (isClosed_le (continuousDensity n) continuous_const).measurableSet
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, C * (resonant n).indicator (fun _ => (1:ℝ)) t := by
+      apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hmS (continuousDensity n))
+        ((onRegion (measurableMask n) continuous_const).const_mul _)
+      intro t _
+      change (smallPeaks n).indicator (density n) t ≤ C * (resonant n).indicator _ t
+      by_cases ht : t ∈ smallPeaks n
+      · have hr := ht.1
+        simpa only [Set.indicator_of_mem ht,Set.indicator_of_mem hr,mul_one] using (show density n t ≤ C from ht.2)
+      · by_cases hr : t ∈ resonant n <;> simp [ht,hr,C,hc]
+    _ = C*A := intervalIntegral.integral_const_mul ..
+    _ ≤ _ := by
+      have hb := mul_le_mul_of_nonneg_left hs (Nat.cast_nonneg (α := ℝ) n)
+      change (2:ℝ)^m*((n:ℝ)*x^4)*A ≤ _
+      linarith only [hb]
+
+private theorem lastHeight (n : ℕ) (hn : 1 ≤ n) (t : ℝ) : density n t ≤ level n (lastLevel n) := by
+  let x := 1+Real.log (n:ℝ)
+  have hn' : (1:ℝ) ≤ n := by exact_mod_cast hn
+  have hx : 1 ≤ x := by dsimp [x]; linarith [Real.log_nonneg hn']
+  have coeff (k : ℕ) (hk : k ≤ n) : |GoldbachBudget.high n k| ≤ x := by
+    unfold GoldbachBudget.high GoldbachBudget.low
+    by_cases hl : k^3 ≤ n
+    · simp [hl]; linarith
+    · simp only [hl, if_false, sub_zero, GoldbachBudget.w]
+      by_cases hp : k.Prime
+      · have hpos : (1:ℝ) ≤ k := by exact_mod_cast hp.one_lt.le
+        rw [if_pos hp,abs_of_nonneg (Real.log_nonneg hpos)]
+        have h := Real.log_le_log (by positivity : 0<(k:ℝ)) (show (k:ℝ)≤n by exact_mod_cast hk)
+        dsimp [x]; linarith
+      · simp [hp]; linarith
+  have mag : ‖GoldbachBudget.spec n (GoldbachBudget.high n) t‖ ≤ 2*(n:ℝ)*x := by
+    unfold GoldbachBudget.spec
+    calc
+      _ ≤ ∑ k ∈ Finset.range (n+1), ‖((GoldbachBudget.high n k:ℝ):ℂ)*GoldbachBudget.phase ((k:ℝ)*t)‖ := norm_sum_le ..
+      _ ≤ ∑ _k ∈ Finset.range (n+1), x := Finset.sum_le_sum fun k hk => by
+        simpa only [norm_mul,phaseUnit,mul_one,Complex.norm_real,Real.norm_eq_abs] using coeff k (by have := Finset.mem_range.mp hk; omega)
+      _ ≤ _ := by simp; nlinarith only [mul_nonneg (sub_nonneg.mpr hn') (by linarith : 0≤x)]
+  have he : (n:ℝ) ≤ (2:ℝ)^(Nat.log 2 n+1) := by exact_mod_cast (Nat.lt_pow_succ_log_self (by decide : 1<2) n).le
+  have hp : 4*(n:ℝ) ≤ (2:ℝ)^lastLevel n := by
+    change _ ≤ (2:ℝ)^((Nat.log 2 n+1)+2)
+    rw [pow_add]; nlinarith only [he]
+  have xx : x^2 ≤ x^4 := by nlinarith [mul_nonneg (sub_nonneg.mpr hx) (by positivity : 0≤x+1),
+    sq_nonneg (x^2-1)]
+  calc
+    _ ≤ (2*(n:ℝ)*x)^2 := pow_le_pow_left₀ (norm_nonneg _) mag 2
+    _ = (4*(n:ℝ))*((n:ℝ)*x^2) := by ring
+    _ ≤ (2:ℝ)^lastLevel n * ((n:ℝ)*x^4) := by gcongr
+    _ = _ := rfl
+
+private theorem bandStep (n j : ℕ) : regionMass n (above n j) =
+    regionMass n (above n (j+1)) + regionMass n (bin n j) := by
+  let s := {t : ℝ | level n (j+1) < density n t}
+  have hm : MeasurableSet s := (isOpen_lt continuous_const (continuousDensity n)).measurableSet
+  have nested : above n j ∩ s = above n (j+1) := by
+    ext t
+    change ((_ ∧ level n j < density n t) ∧ level n (j+1) < density n t) ↔ _
+    constructor
+    · exact fun h => ⟨h.1.1,h.2⟩
+    · intro h
+      have hi := h.2
+      rw [heightSucc] at hi
+      exact ⟨⟨h.1,by linarith [heightPositive n j]⟩,h.2⟩
+  have lower : above n j \ s = bin n j := by
+    ext t
+    change ((_ ∧ level n j < density n t) ∧ ¬level n (j+1) < density n t) ↔ _
+    rw [heightSucc,not_lt]
+    exact and_assoc
+  simpa only [nested,lower] using regionSplit n (measurableAbove n j) hm
+
+private theorem binEnergy (n j : ℕ) : regionMass n (bin n j) ≤
+    2*level n j * integralOn (bin n j) (fun _ => (1:ℝ)) := by
+  let C := 2*level n j
+  have hm := measurableBin n j
+  unfold regionMass integralOn
+  rw [← intervalIntegral.integral_const_mul]
+  apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hm (continuousDensity n))
+    ((onRegion hm continuous_const).const_mul _)
+  intro t _
+  by_cases ht : t ∈ bin n j
+  · simpa [ht] using (show density n t ≤ 2*level n j from ht.2.2)
+  · simp [ht]
+
+private theorem sumBins (n i J : ℕ) (hi : i ≤ J) (b : ℝ)
+    (last : ∀ t, density n t ≤ level n J)
+    (bounds : ∀ j, i ≤ j → j < J → regionMass n (bin n j) ≤ b) :
+    regionMass n (above n i) ≤ (J-i:ℕ)*b := by
+  have partialSum : ∀ l j : ℕ, i ≤ j → j+l ≤ J → regionMass n (above n j) ≤
+      regionMass n (above n (j+l)) + (l:ℝ)*b := by
+    intro l
+    induction l with
+    | zero => intro j _ _; simp
+    | succ l ih =>
+      intro j hj hJ
+      have prev := ih (j+1) (by omega) (by omega)
+      have cur := bounds j hj (by omega)
+      have eq := bandStep n j
+      rw [show j+(l+1)=(j+1)+l by omega]
+      push_cast
+      linarith
+  have empty : above n J = ∅ := by
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    intro t ht
+    exact (not_lt.mpr (last t)) ht.2
+  have h := partialSum (J-i) i le_rfl (by omega)
+  rw [show i+(J-i)=J by omega,empty] at h
+  simpa [regionMass] using h
+
+theorem spikesFromLateLevels
+    (late : ∃ N : ℕ, ∀ n ≥ N, Even n → ∀ j : ℕ, firstLevel n ≤ j → j < lastLevel n →
+      level n j * integralOn (bin n j) (fun _ => (1:ℝ)) ≤ (n:ℝ)/(100000*(1+Real.log (n:ℝ))^2)) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n (deep n ∩ spikes n) ≤ (n:ℝ)/2304 := by
+  obtain ⟨N,hN⟩ := late
+  obtain ⟨M,hM⟩ := lowPeaksSublinear (1/4608) (by norm_num)
+  refine ⟨max 1 (max N M), ?_⟩
+  intro n hn he
+  let x := 1+Real.log (n:ℝ)
+  let b := (n:ℝ)/(100000*x^2)
+  let i := firstLevel n
+  let J := lastLevel n
+  have hn1 : 1 ≤ n := by omega
+  have hx : 1 ≤ x := by dsimp [x]; linarith [Real.log_nonneg (by exact_mod_cast hn1 : (1:ℝ) ≤ n)]
+  have hi : i ≤ J := by dsimp [i,J,firstLevel,lastLevel,length]; omega
+  have hJ : (J:ℝ) ≤ 3*x := by
+    have hp : (2:ℝ)^Nat.log 2 n ≤ n := by exact_mod_cast Nat.pow_log_le_self 2 (by omega : n≠0)
+    have h := Real.log_le_log (by positivity : 0<(2:ℝ)^Nat.log 2 n) hp
+    rw [Real.log_pow] at h
+    have half : (1/2:ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
+    have aux := mul_le_mul_of_nonneg_left half (Nat.cast_nonneg (α := ℝ) (Nat.log 2 n))
+    dsimp [J,lastLevel,x]; push_cast; linarith [Real.log_nonneg (by exact_mod_cast hn1 : (1:ℝ) ≤ n)]
+  have band (j : ℕ) (hj : i ≤ j) (h : j<J) : regionMass n (bin n j) ≤ 2*b := by
+    have h' := hN n (by omega) he j hj h
+    change level n j * integralOn (bin n j) (fun _ => (1:ℝ)) ≤ b at h'
+    linarith only [binEnergy n j,h']
+  have tall := sumBins n i J hi (2*b) (lastHeight n hn1) band
+  have ht : regionMass n (above n i) ≤ (n:ℝ)/4608 := by
+    have count : ((J-i:ℕ):ℝ) ≤ 3*x := (by exact_mod_cast Nat.sub_le J i : ((J-i:ℕ):ℝ) ≤ (J:ℝ)).trans hJ
+    have bb : 0 ≤ 2*b := by dsimp [b]; positivity
+    apply tall.trans ((mul_le_mul_of_nonneg_right count bb).trans ?_)
+    dsimp [b]
+    have x0 : 0 < x := by linarith
+    field_simp
+    nlinarith [mul_nonneg (Nat.cast_nonneg (α := ℝ) n) (sub_nonneg.mpr hx),
+      mul_nonneg (Nat.cast_nonneg (α := ℝ) n) (sq_nonneg (x-1))]
+  have hs : MeasurableSet (deep n ∩ spikes n) :=
+    (measurableDeep n).inter (isOpen_lt continuous_const (continuousDensity n)).measurableSet
+  have hm : MeasurableSet (smallPeaks n) :=
+    (measurableMask n).inter (isClosed_le (continuousDensity n) continuous_const).measurableSet
+  have maj : regionMass n (deep n ∩ spikes n) ≤ regionMass n (smallPeaks n) + regionMass n (above n i) := by
+    unfold regionMass
+    rw [← intervalIntegral.integral_add (onRegion hm (continuousDensity n)) (onRegion (measurableAbove n i) (continuousDensity n))]
+    apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hs (continuousDensity n))
+      ((onRegion hm (continuousDensity n)).add (onRegion (measurableAbove n i) (continuousDensity n)))
+    intro t _
+    have nn : 0 ≤ density n t := sq_nonneg _
+    by_cases hh : t ∈ deep n ∩ spikes n
+    · by_cases h : density n t ≤ level n i
+      · have small : t ∈ smallPeaks n := ⟨hh.1.1,h⟩
+        have outside : t ∉ above n i := fun h' => (not_lt.mpr h) h'.2
+        simp [hh,small,outside]
+      · have top : t ∈ above n i := ⟨hh.1,lt_of_not_ge h⟩
+        have small : t ∉ smallPeaks n := fun h' => h h'.2
+        simp [hh,small,top]
+    · by_cases a : t ∈ above n i <;> by_cases c : t ∈ smallPeaks n <;> simp [hh,a,c,nn,add_nonneg]
+  linarith only [maj,ht,hM n (by omega)]
+
 end
 end GoldbachPacket
