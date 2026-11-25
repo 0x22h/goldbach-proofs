@@ -633,7 +633,7 @@ theorem evenLagSupport (n : ℕ) (hn : 8 ≤ n) (h : ℕ) (hh : Odd h) :
     · have heq := hp.eq_two_or_odd.resolve_right (by omega)
       subst k
       have hcut : 2^3 ≤ n := by omega
-      simp [GoldbachBudget.high, GoldbachBudget.low, hcut]
+      simp only [GoldbachBudget.high, GoldbachBudget.low, if_pos hcut, sub_self]
     · simp [GoldbachBudget.high, GoldbachBudget.low, GoldbachBudget.w, hp]
   have wheelEven (k : ℕ) (hk : k % 2 = 0) : wheel k = 0 := by
     have hnc : ¬Nat.Coprime k 30 := by
