@@ -230,6 +230,69 @@ theorem packetToBulk
   rw [split]
   linarith only [hP n (by omega) he, hD n (by omega) he]
 
+/-- The clipping loss is dominated by half the energy on the actual resonant minor arcs. -/
+theorem capComparison (n : ℕ) :
+    let B := {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}
+    J n (fun t => min (K n t) (1/2)) -
+        intervalIntegral (B.indicator (fun t => ‖spec n (high n) t‖^2)) 0 1 MeasureTheory.volume / 2
+      ≤ J n (K n) := by
+  let B := {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}
+  let cap := fun t => min (K n t) (1/2)
+  let excess := fun t => K n t - cap t
+  let energy := fun t : ℝ => ‖spec n (high n) t‖^2
+  have hk : Continuous (K n) := by unfold K; fun_prop
+  have hc : Continuous cap := hk.min continuous_const
+  have he : Continuous excess := hk.sub hc
+  have hB : MeasurableSet B :=
+    (measurableArcs n).compl.inter (isOpen_lt continuous_const hk).measurableSet
+  have henergy : Continuous energy := by unfold energy spec phase; fun_prop
+  have hmask : IntervalIntegrable (B.indicator energy) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (henergy.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator hB
+  have hKle (t : ℝ) : K n t ≤ 1 := by
+    let L := max 1 (Nat.log 2 n / 2)
+    have hL : 0 < L := by dsimp [L]; omega
+    change (∑ j ∈ Finset.range L, Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L:ℝ) ≤ 1
+    apply (div_le_iff₀ (by exact_mod_cast hL : (0:ℝ) < L)).mpr
+    calc
+      _ ≤ ∑ _j ∈ Finset.range L, (1:ℝ) := Finset.sum_le_sum fun _ _ => Real.cos_le_one _
+      _ = _ := by simp
+  have unit (x : ℝ) : ‖phase x‖ = 1 := by simp [phase, Complex.norm_exp]
+  have pt (t : ℝ) : ‖kernelIntegrand n excess t‖ ≤ (1/2:ℝ) * B.indicator energy t := by
+    by_cases hm : t ∈ (arcs n)ᶜ
+    · by_cases hp : (1:ℝ)/2 < K n t
+      · have hb : t ∈ B := ⟨hm,hp⟩
+        have hx : |excess t| ≤ 1/2 := by
+          simp only [excess, cap, min_eq_right hp.le, abs_of_nonneg (sub_nonneg.mpr hp.le)]
+          linarith [hKle t]
+        simp only [kernelIntegrand, Set.indicator_of_mem hm, Set.indicator_of_mem hb, norm_mul,
+          unit, mul_one, Complex.norm_real, Real.norm_eq_abs, energy, pow_two, ← mul_assoc]
+        gcongr <;> exact hx
+      · have hb : t ∉ B := fun h => hp h.2
+        simp [kernelIntegrand, hm, hb, excess, cap, min_eq_left (le_of_not_gt hp)]
+    · have hb : t ∉ B := fun h => hm h.1
+      simp [kernelIntegrand, hm, hb]
+  have hi := intervalIntegral.norm_integral_le_of_norm_le
+    (f := kernelIntegrand n excess) (by norm_num : (0:ℝ) ≤ 1)
+    (Filter.Eventually.of_forall fun t _ => pt t) (hmask.const_mul (1/2:ℝ))
+  rw [intervalIntegral.integral_const_mul] at hi
+  have bound := (Complex.abs_re_le_norm _).trans hi
+  have add : kernelIntegrand n (K n) = fun t => kernelIntegrand n cap t + kernelIntegrand n excess t := by
+    funext t
+    by_cases ht : t ∈ (arcs n)ᶜ
+    · simp only [kernelIntegrand, Set.indicator_of_mem ht, excess, Complex.ofReal_sub]
+      ring
+    · simp [kernelIntegrand, ht]
+  have eqSum : J n (K n) = J n cap + J n excess := by
+    change (intervalIntegral (kernelIntegrand n (K n)) 0 1 MeasureTheory.volume).re = _
+    rw [add, intervalIntegral.integral_add (kernelIntegrable n _ hc) (kernelIntegrable n _ he)]
+    rfl
+  change J n cap - intervalIntegral (B.indicator energy) 0 1 MeasureTheory.volume / 2 ≤ J n (K n)
+  change |J n excess| ≤ _ at bound
+  rw [eqSum]
+  linarith only [(abs_le.mp bound).1]
+
 /-- Compare two exact lag expansions on a common mask before using the budgets. -/
 theorem energyFromLags {U short long : ℕ → (ℕ → ℝ) → ℝ}
     (expand : ∀ n a, U n a = short n a + long n a)
