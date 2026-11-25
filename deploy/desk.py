@@ -40,9 +40,9 @@ AGENT_LABEL = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9 ._:/+\-]{0,95}", re.ASCII)
 
 def agent_metadata(value):
     """Normalize self-reported identifiers; missing data stays explicitly unknown."""
-    if value is None:
-        return {"model": "unknown", "harness": "unknown", "harness_version": "unknown"}
-    if not isinstance(value, dict) or set(value) - {"model", "harness", "harness_version"}:
+    if not isinstance(value, dict) or not {"model", "harness"} <= value.keys():
+        raise ValueError("agent_model_and_harness_required")
+    if set(value) - {"model", "harness", "harness_version"}:
         raise ValueError("invalid_agent_metadata")
     result = {}
     for key in ("model", "harness", "harness_version"):
@@ -257,13 +257,16 @@ class Desk:
             pr, head = body.get("pr"), body.get("head")
             if not positive_id(pr, 9_999_999) or not isinstance(head, str) or not HEAD.fullmatch(head):
                 return error(400, "invalid_pull_request")
+            same_submission = lease["pr"] == pr and lease["head"] == head
+            if same_submission and "agent" not in body:
+                return 200, {"submitted": True, **self.lease_times(lease)}
             try:
                 agent = agent_metadata(body.get("agent"))
-            except ValueError:
-                return error(400, "invalid_agent_metadata")
+            except ValueError as exc:
+                return error(400, str(exc))
             if lease["pr"] is not None:
-                if lease["pr"] == pr and lease["head"] == head:
-                    if "agent" in body and any(agent[key] != lease[key] for key in agent):
+                if same_submission:
+                    if any(agent[key] != lease[key] for key in agent):
                         return error(409, "submission_metadata_frozen")
                     return 200, {"submitted": True, **self.lease_times(lease)}
                 return error(409, "lease_already_submitted")
@@ -275,7 +278,7 @@ class Desk:
                     model = ?, harness = ?, harness_version = ?, agent_reported = ?
                 WHERE token_hash = ?
             """, (pr, head, now, expires, agent["model"], agent["harness"], agent["harness_version"],
-                  int(body.get("agent") is not None), digest))
+                  1, digest))
             return 200, {"submitted": True, "expires_at": expires,
                          "absolute_expires_at": lease["absolute_expires_at"]}
 
@@ -397,7 +400,7 @@ class Desk:
                 SELECT model, harness, harness_version, agent_reported FROM goldbach_leases
                 WHERE run_id = ? AND gap = ? AND pr IS NOT NULL AND head IS NOT NULL
             """, (record["run_id"], record["lemma_id"])).fetchone()
-            record["agent"] = dict(zip(("model", "harness", "harness_version"), row[:3])) if row else agent_metadata(None)
+            record["agent"] = dict(zip(("model", "harness", "harness_version"), row[:3])) if row else dict.fromkeys(("model", "harness", "harness_version"), "unknown")
             record["agent"]["source"] = "self_reported" if row and row[3] else "unrecorded"
 
     @staticmethod

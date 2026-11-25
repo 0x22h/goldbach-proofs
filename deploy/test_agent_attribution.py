@@ -38,6 +38,15 @@ class AttributionTests(unittest.TestCase):
         self.assertEqual(self.submit(token, {'harness': 'made-up'})[0], 400)
         self.assertEqual(self.submit(token, self.agent)[0], 200)
 
+    def test_new_submissions_require_both_fields_without_consuming_lease(self):
+        token = self.helper.claim()
+        for fields in ({}, {"agent": None}, {"agent": {}}, {"agent": {"model": "a"}},
+                       {"agent": {"harness": "codex"}}):
+            body = {"pr": 8, "head": "a"*40, **fields}
+            self.assertEqual(self.helper.request("submit", body, token=token),
+                             (400, {"error": "agent_model_and_harness_required"}))
+        self.assertEqual(self.submit(token, {"model": "model-a", "harness": "codex"})[0], 200)
+
     def test_metadata_frozen_and_legacy_retry_does_not_erase_it(self):
         token = self.helper.claim()
         self.assertEqual(self.submit(token, self.agent)[0], 200)
@@ -93,7 +102,7 @@ class AttributionTests(unittest.TestCase):
 
     def test_additive_migration_and_missing_metadata(self):
         token = self.helper.claim()
-        self.submit(token)
+        self.assertEqual(self.submit(token, self.agent)[0], 200)
         with sqlite3.connect(self.helper.db) as conn:
             for column in ('model', 'harness', 'harness_version', 'agent_reported'):
                 conn.execute(f'ALTER TABLE goldbach_leases DROP COLUMN {column}')
@@ -102,6 +111,7 @@ class AttributionTests(unittest.TestCase):
             with migrated.transaction() as conn:
                 row = conn.execute('SELECT model,harness,harness_version,agent_reported,pr,head FROM goldbach_leases').fetchone()
             self.assertEqual(tuple(row), ('unknown', 'unknown', 'unknown', 0, 8, 'a'*40))
+        self.assertEqual(self.submit(token)[0], 200)
 
 
 class SubmissionToolTests(unittest.TestCase):

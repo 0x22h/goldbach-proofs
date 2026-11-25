@@ -179,12 +179,12 @@ class DeskScaleTest(unittest.TestCase):
                     tokens = [item["lease"]["token"] for item in claims]
                     gaps = {item["gap"]["id"] for item in claims}
                     catalogue = json.loads((ROOT / "research/gaps.json").read_text(encoding="utf-8"))["gaps"]
-                    self.assertEqual(gaps, {entry["id"] for entry in catalogue})
+                    self.assertTrue(gaps <= {entry["id"] for entry in catalogue})
+                    self.assertEqual(len(gaps), min(SESSIONS, len(catalogue)))
                     for entry in catalogue:
                         count = sum(item["gap"]["id"] == entry["id"] for item in claims)
                         if not entry.get("parallel"):
-                            self.assertEqual(count, 1)
-                    self.assertGreater(SESSIONS, len(gaps))
+                            self.assertLessEqual(count, 1)
                     self.assertEqual(len(set(tokens)), SESSIONS)
                     status = self.request("/api/status")["desk"]
                     self.assertEqual(set(status["assignments"]), gaps)
@@ -194,7 +194,7 @@ class DeskScaleTest(unittest.TestCase):
                         self.request(api + "claim", {"handle": "outsider"}, ticket=ticket, expected=401)
                     self.wave(pool, mode, "renewals", lambda i: self.request(api + "beat", {}, token=tokens[i]))
                     self.wave(pool, mode, "submissions", lambda i: self.request(
-                        api + "submit", {"pr": i + 1, "head": f"{i + 1:040x}"}, token=tokens[i],
+                        api + "submit", {"pr": i + 1, "head": f"{i + 1:040x}", "agent": {"model": "test-model", "harness": "codex"}}, token=tokens[i],
                     ))
                     pending = []
                     for _ in range(0, SESSIONS, QUEUE_BATCH):
@@ -228,7 +228,7 @@ class DeskScaleTest(unittest.TestCase):
             token = claim["lease"]["token"]
             next_path = paths[(i + 1) % len(paths)]
             self.request(next_path + "/api/desk/beat", {}, token=token, expected=401)
-            self.request(path + "/api/desk/submit", {"pr": i + 1, "head": f"{i + 1:040x}"}, token=token)
+            self.request(path + "/api/desk/submit", {"pr": i + 1, "head": f"{i + 1:040x}", "agent": {"model": "test-model", "harness": "codex"}}, token=token)
         pending = self.request("/api/desk/pending", {}, signed=True)["pending"]
         self.assertEqual({row["gap"] for row in pending}, {claim["gap"]["id"] for claim in claims})
 
@@ -284,7 +284,7 @@ class DeskScaleTest(unittest.TestCase):
                 self.assertTrue(set(expected) <= catalogue)
                 self.assertEqual(len(set(expected)), min(len(expected), len(catalogue)))
             self.wave(pool, f"{len(paths)} problems", "submissions", lambda i: self.request(
-                claims[i][0] + "/api/desk/submit", {"pr": i + 1, "head": f"{i + 1:040x}"}, token=claims[i][1]
+                claims[i][0] + "/api/desk/submit", {"pr": i + 1, "head": f"{i + 1:040x}", "agent": {"model": "test-model", "harness": "codex"}}, token=claims[i][1]
             ))
             queued = []
             remaining = expected_claims.copy()

@@ -42,7 +42,7 @@ class DeskTests(unittest.TestCase):
         return data["lease"]["token"]
 
     def submit(self, token, *, pr=8, head="a" * 40):
-        return self.request("submit", {"pr": pr, "head": head}, token=token)
+        return self.request("submit", {"pr": pr, "head": head, "agent": {"model": "test-model", "harness": "codex"}}, token=token)
 
     def authorization(self, **changes):
         result = {
