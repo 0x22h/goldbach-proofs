@@ -8,8 +8,8 @@
     "statement_sha256": "1704909f79722495e2cdafb8a10bcc82d7211f54166c888331b8eb785fbc6f90"
   },
   "motivation": {
-    "zh": "给 FR-7022 建立两条可独立推进的充分归约，保留原题、阈值与常数。",
-    "en": "Provide two sufficient routes to FR-7022 while preserving its frozen range and constants."
+    "zh": "在现有 representations 路线内细化 FR-7022。两种证明方法均保留同一父题、阈值与常数。",
+    "en": "Refine FR-7022 within the existing representations route. Both proof methods retain its statement, range and constants."
   },
   "tasks": [
     {
@@ -56,17 +56,14 @@
         "en": "Give all higher prime powers a global n/200 budget"
       },
       "brief": {
-        "zh": "对 pᵏ≤n、k≥2，用已有底数上界 √n 和指数上界 log₂ n。于是总权重至多 √n·log₂(n)·log n；验证它从 10¹⁶ 起小于 n/200。可独立于等差数列完成。",
-        "en": "Use the base and exponent cutoffs for pᵏ ≤ n with k ≥ 2. Bound the total by √n log₂(n) log n and check the ratio from 10¹⁶ onward. No progression estimates are required."
+        "zh": "固定版 Mathlib 的 Chebyshev.psi_sub_theta_eq_sum_not_prime 给出高次幂的精确和，psi_sub_theta_le 将它界为 2√n log n。令 u 为 n 的四次方根，从 n≥10¹⁶ 得 u≥10⁴，用 log u≤u 完成显式常数换算。",
+        "en": "Use the pinned Mathlib identities Chebyshev.psi_sub_theta_eq_sum_not_prime and Chebyshev.psi_sub_theta_le. For the threshold, set u to the fourth root of n, use u ≥ 10⁴ and log u ≤ u, and convert 2√n log n to the explicit budget."
       },
-      "source": "https://personal.math.ubc.ca/~bennett/BeMaObRe-IJM-2018.pdf",
+      "source": "https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/NumberTheory/Chebyshev.lean",
       "program": "correlation",
       "parallel": true,
       "assumptions": [],
-      "depends_on": [
-        "L-goldbach-pp-base-cutoff",
-        "L-goldbach-pp-exp-cutoff"
-      ],
+      "depends_on": [],
       "route": "representations"
     },
     {
@@ -135,7 +132,7 @@
     }
   ],
   "route_note": {
-    "zh": "FR-7022 可按 BMOR 的 ψ 界推进，也可独立控制素数误差和高次素数幂。两条路线保留同一个百分比阈值。",
-    "en": "For FR-7022, formalize the BMOR ψ estimate or separately bound primes and higher powers. Both routes preserve the one-percent target."
+    "zh": "同一路线内，FR-7022 的证明可直接用 BMOR 的 ψ 界，也可分别估计素数与高次素数幂。",
+    "en": "Within this route, prove FR-7022 using the BMOR ψ bound directly or by estimating primes and higher powers separately."
   }
 }
