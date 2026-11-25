@@ -1071,16 +1071,19 @@ private theorem lorentzIntegral {r : ℝ} (hr : 0 < r) (c : ℝ) :
   have deriv (t : ℝ) : HasDerivAt F (lorentz r c t) t := by
     have h := (((Real.hasDerivAt_arctan ((t-c)/r)).comp t
       (((hasDerivAt_id t).sub_const c).div_const r)).div_const r)
-    convert h using 1
-    dsimp [lorentz]
-    field_simp
-    <;> ring
+    have eq : lorentz r c t = 1 / (1 + ((t-c)/r)^2) * (1/r) / r := by
+      unfold lorentz
+      field_simp <;> ring
+    rw [eq]
+    exact h
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => deriv t)
     ((lorentzContinuous hr c).intervalIntegrable ..)]
   dsimp [F]
   rw [← sub_div]
-  exact div_le_div_of_nonneg_right (by linarith [Real.arctan_lt_pi_div_two ((1-c)/r),
-    Real.neg_pi_div_two_lt_arctan ((0-c)/r)]) hr.le
+  apply div_le_div_of_nonneg_right _ hr.le
+  have ha := Real.arctan_lt_pi_div_two ((1-c)/r)
+  have hb := Real.neg_pi_div_two_lt_arctan ((0-c)/r)
+  linarith
 
 /-- Every k/30, including 0 and 1, belongs to the frozen family after reducing the fraction. -/
 private theorem gridExclusion {n k : ℕ} {t : ℝ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
@@ -1088,12 +1091,13 @@ private theorem gridExclusion {n k : ℕ} {t : ℝ} (hn : 0 < n) (hQ : 30 ≤ gr
     (gridQ n:ℝ)/(30*(n:ℝ)) < |t-(k:ℝ)/30| := by
   obtain ⟨g,a,q,hg,hcop,hk',hq'⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right k (by decide : 0 < 30))
   have hq : 0 < q := by by_contra! hz; simp [show q=0 by omega] at hq'
-  have hq30 : q ≤ 30 := by nlinarith [Nat.mul_le_mul_left q hg]
+  have hq30 : q ≤ 30 := Nat.le_of_dvd (by decide) ⟨g,hq'⟩
   have haq : a ≤ q := by
     exact (Nat.mul_le_mul_right_iff hg).mp (show a*g ≤ q*g by omega)
   have eq : (k:ℝ)/30 = (a:ℝ)/(q:ℝ) := by
     apply (div_eq_div_iff (by norm_num) (by positivity)).mpr
-    exact_mod_cast (show k*q = a*30 by rw [hk']; calc (a*g)*q = a*(q*g) := by ring; _ = _ := by rw [← hq'])
+    have cross : k*q = a*30 := by rw [hk',hq']; ring
+    exact_mod_cast cross
   by_contra! h
   apply hm
   refine ⟨q,a,hq,hq30.trans hQ,haq,hcop,?_⟩
@@ -1115,6 +1119,7 @@ private theorem gridChord (t : ℝ) (k : ℕ) (hk : |30*t-(k:ℝ)| ≤ 1/2) :
     nlinarith only [Real.sin_sq_add_cos_sq y]
   have he : gridDistance t = 2*|Real.sin x| := by
     apply (sq_eq_sq₀ (norm_nonneg _) (by positivity)).mp
+    change gridDistance t ^ 2 = (2*|Real.sin x|)^2
     rw [hs,hangle,Real.cos_add_nat_mul_two_pi,Real.cos_two_mul]
     nlinarith only [sq_abs (Real.sin x), Real.sin_sq_add_cos_sq x]
   have hx : |x| ≤ Real.pi/2 := by
@@ -1135,7 +1140,8 @@ private theorem gridPointMajorant {n : ℕ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
     (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t ≤
       ∑ k ∈ Finset.range 31, 2*lorentz ((gridQ n:ℝ)/(30*(n:ℝ))) ((k:ℝ)/30) t := by
   let r := (gridQ n:ℝ)/(30*(n:ℝ))
-  have hr : 0 < r := by dsimp [r]; have : 0 < gridQ n := by omega; positivity
+  have hq : 0 < gridQ n := by omega
+  have hr : 0 < r := by dsimp [r]; positivity
   have nonneg (k : ℕ) : 0 ≤ 2*lorentz r ((k:ℝ)/30) t := by unfold lorentz; positivity
   by_cases hm : t ∈ (GoldbachBudget.arcs n)ᶜ
   · rw [Set.indicator_of_mem hm]
@@ -1209,6 +1215,41 @@ theorem gridTail (ε : ℝ) (hε : 0 < ε) :
 
 theorem wheelMinorLeakage : ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
     (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (fun u => ‖GoldbachBudget.spec n wheel u‖^2) t) ≤ ε*(n:ℝ) := wheelLeakageTransfer wheelEnvelope gridTail
+
+theorem wheelMaskedBudget :
+    ∃ N : ℕ, ∀ n ≥ N, Even n →
+      (∫ t in (0:ℝ)..1, (resonant n).indicator (fun u => ‖GoldbachBudget.spec n wheel u‖^2) t) ≤ (n:ℝ)/2304 := by
+  obtain ⟨N,hN⟩ := wheelMinorLeakage (1/2304) (by norm_num)
+  refine ⟨N, ?_⟩
+  intro n hn _
+  let f := fun t : ℝ => ‖GoldbachBudget.spec n wheel t‖^2
+  have hc : Continuous f := by unfold f GoldbachBudget.spec GoldbachBudget.phase; fun_prop
+  have hi {s : Set ℝ} (hs : MeasurableSet s) :
+      IntervalIntegrable (s.indicator f) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (hc.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator hs
+  have hk : Continuous (fun t => packet (length n) t / (length n:ℝ)) := by unfold packet; fun_prop
+  have hm : MeasurableSet (resonant n) := (GoldbachBudget.measurableArcs n).compl.inter
+    (isOpen_lt (continuous_const : Continuous (fun _ : ℝ => (1:ℝ)/2)) hk).measurableSet
+  have bound : (∫ t in (0:ℝ)..1, (resonant n).indicator f t) ≤
+      ∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator f t := by
+    apply intervalIntegral.integral_mono_on (by norm_num) (hi hm) (hi (GoldbachBudget.measurableArcs n).compl)
+    intro t _
+    by_cases ht : t ∈ resonant n
+    · have ha : t ∈ (GoldbachBudget.arcs n)ᶜ := ht.1
+      simp [ht,ha]
+    · by_cases ha : t ∈ (GoldbachBudget.arcs n)ᶜ <;> simp [ht,ha,f,sq_nonneg]
+  exact bound.trans (by linarith only [hN n hn])
+
+/-- The only remaining argument to this energy reduction is the signed long-lag prime-pair excess. -/
+theorem maskedEnergyFromLong
+    (far : ∃ N : ℕ, ∀ n ≥ N, Even n →
+      longPart n (GoldbachBudget.high n) - longPart n wheel ≤ (n:ℝ)/1152) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n →
+      (∫ t in (0:ℝ)..1, (resonant n).indicator (fun u => ‖GoldbachBudget.spec n (GoldbachBudget.high n) u‖^2) t)
+        ≤ (n:ℝ)/576 :=
+  GoldbachBudget.energyFromLags lagEnergyIdentity wheelMaskedBudget shortWheelBudget far
 
 end
 end GoldbachPacket
