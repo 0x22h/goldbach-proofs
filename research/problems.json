@@ -12869,7 +12869,7 @@
         "id": "L-quadratic-primes-mid-repeat-block-cost",
         "file": "lean/PEqualNP/Outside/L_quadratic_primes_mid_repeat_block_cost.lean",
         "module": "PEqualNP.Outside.L_quadratic_primes_mid_repeat_block_cost",
-        "statement": "∀ x : ℕ, 1≤x → (∑ n ∈ Finset.Ioc x (2*x), ∑ p ∈ (n^2+1).primeFactors.filter (fun p => x<p), ((((n^2+1).factorization p-1:ℕ):ℝ))*Real.log (p:ℝ)) ≤ Real.log (((2*x)^2+1:ℕ):ℝ)",
+        "statement": "let w := fun (n p : ℕ) => ((((n^2+1).factorization p-1:ℕ):ℝ))*Real.log (p:ℝ); ∀ x : ℕ, 1≤x → (∑ n ∈ Finset.Ioc x (2*x), ∑ p ∈ ((n:ℕ)^2+1).primeFactors.filter (fun p => x<p), w n p) ≤ Real.log (((2*x)^2+1:ℕ):ℝ)",
         "plain_statement": {
           "zh": "整个二进区间重复中段因子的对数级总损失",
           "en": "Logarithmic aggregate excess from repeated middle primes"
@@ -17503,7 +17503,7 @@
         "id": "L-hash-collision-lab-choose-tangent-right",
         "file": "lean/PEqualNP/Outside/L_hash_collision_lab_choose_tangent_right.lean",
         "module": "PEqualNP.Outside.L_hash_collision_lab_choose_tangent_right",
-        "statement": "∀ k t m : ℕ, 1≤k → t≤m → Nat.choose t k+(m-t)*Nat.choose t (k-1) ≤ Nat.choose m k",
+        "statement": "∀ k t m : ℕ, 1 ≤ k → t ≤ m → Nat.choose t k+(m-t)*Nat.choose t (k-1)  ≤  Nat.choose m k",
         "plain_statement": {
           "zh": "整数二项式系数在切点右侧的支撑线",
           "en": "Right supporting line for binomial coefficients"
@@ -22157,7 +22157,7 @@
         "id": "L-log-rank-split-area-recurrence",
         "file": "lean/PEqualNP/Outside/L_log_rank_split_area_recurrence.lean",
         "module": "PEqualNP.Outside.L_log_rank_split_area_recurrence",
-        "statement": "∀ n r c s : ℕ, r≤s → s<n → c≤n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (s+1-r)*(n-s)*F (s+1) = (s+1)*(n-s-c)*F s",
+        "statement": "∀ n r c s : ℕ, r ≤ s → s < n → c ≤ n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (s+1-r)*(n-s)*F (s+1) = (s+1)*(n-s-c)*F s",
         "plain_statement": {
           "zh": "移动一个坐标时矩形面积的精确递推",
           "en": "Exact rectangle-area recurrence under one coordinate transfer"
@@ -22176,7 +22176,7 @@
         "id": "L-log-rank-split-area-gain",
         "file": "lean/PEqualNP/Outside/L_log_rank_split_area_gain.lean",
         "module": "PEqualNP.Outside.L_log_rank_split_area_gain",
-        "statement": "∀ n r c s : ℕ, r≤s → s<n → c≤n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (F s ≤ F (s+1) ↔ (s+1)*c ≤ r*(n-s))",
+        "statement": "∀ n r c s : ℕ, r ≤ s → s < n → c ≤ n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (F s  ≤  F (s+1) ↔ (s+1)*c  ≤  r*(n-s))",
         "plain_statement": {
           "zh": "分配坐标给行层能否增大矩形",
           "en": "Determine when moving a coordinate increases area"

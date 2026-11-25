@@ -11124,7 +11124,7 @@
       "id": "L-goldbach-power-box-card",
       "file": "lean/PEqualNP/Outside/L_goldbach_power_box_card.lean",
       "module": "PEqualNP.Outside.L_goldbach_power_box_card",
-      "statement": "let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n : ℕ, (S n).card ≤ Nat.sqrt n * Nat.log 2 n",
+      "statement": "let S := fun n : ℕ => (Finset.range (n+1)) ∩ (((Finset.Icc 2 (Nat.sqrt n)).product (Finset.Icc 2 (Nat.log 2 n))).image (fun z => z.1 ^ z.2)); ∀ n : ℕ, (S n).card ≤ Nat.sqrt n * Nat.log 2 n",
       "plain_statement": {
         "zh": "新路线 · 奇特征干涉 · OC-0088 · 完全幂支持的底数–指数盒计数",
         "en": "New route · Odd-character interference · OC-0088 · Count perfect powers by a base–exponent box"
@@ -11145,7 +11145,7 @@
       "id": "L-goldbach-power-box-detect",
       "file": "lean/PEqualNP/Outside/L_goldbach_power_box_detect.lean",
       "module": "PEqualNP.Outside.L_goldbach_power_box_detect",
-      "statement": "let A := fun k : ℕ => if 0 < ((Finset.Icc 2 (Nat.log 2 k)).filter (fun a => k.minFac ^ a=k)).card then Real.log (k:ℝ) else 0; let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n k : ℕ, k≤n → A k≠0 → k∈S n",
+      "statement": "let A := fun k : ℕ => if 0 < ((Finset.Icc 2 (Nat.log 2 k)).filter (fun a => k.minFac ^ a=k)).card then Real.log (k:ℝ) else 0; let S := fun n : ℕ => (Finset.range (n+1)) ∩ (((Finset.Icc 2 (Nat.sqrt n)).product (Finset.Icc 2 (Nat.log 2 n))).image (fun z => z.1 ^ z.2)); ∀ n k : ℕ, k≤n → A k≠0 → k∈S n",
       "plain_statement": {
         "zh": "新路线 · 奇特征干涉 · OC-0089 · 最小素因子探测权的支撑嵌入",
         "en": "New route · Odd-character interference · OC-0089 · Embed the detected support in the power box"
@@ -11211,7 +11211,7 @@
       "id": "L-goldbach-ap-power-box-envelope",
       "file": "lean/PEqualNP/Outside/L_goldbach_ap_power_box_envelope.lean",
       "module": "PEqualNP.Outside.L_goldbach_ap_power_box_envelope",
-      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let h := fun k : ℕ => ArithmeticFunction.vonMangoldt k-w k; let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n k : ℕ, 2≤n → k≤n → 0≤h k ∧ h k ≤ (if k∈S n then Real.log (n:ℝ) else 0)",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let h := fun k : ℕ => ArithmeticFunction.vonMangoldt k-w k; let S := fun n : ℕ => (Finset.range (n+1)) ∩ (((Finset.Icc 2 (Nat.sqrt n)).product (Finset.Icc 2 (Nat.log 2 n))).image (fun z => z.1 ^ z.2)); ∀ n k : ℕ, 2≤n → k≤n → 0≤h k ∧ h k ≤ (if k∈S n then Real.log (n:ℝ) else 0)",
       "plain_statement": {
         "zh": "新路线 · Theta 反射 · TH-0090 · 剩余类上素数幂误差的点态包络",
         "en": "New route · Theta reflection · TH-0090 · Pointwise envelope for the prime-power discrepancy"
