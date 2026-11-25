@@ -9,7 +9,8 @@ private def ap (q a n : ℕ) : ℝ :=
 private def evenMass (n : ℕ) : ℝ :=
   ∑ k ∈ (Finset.range (n+1)).filter (fun k => ¬Nat.Coprime k 2), ArithmeticFunction.vonMangoldt k
 
-theorem liftFour (n : ℕ) :
+/-- The two odd classes modulo four cover all odd integers. -/
+private theorem liftFour (n : ℕ) :
     ap 2 1 n = ap 4 1 n + ap 4 3 n ∧
     ap 1 0 n = ap 4 1 n + ap 4 3 n + evenMass n := by
   unfold ap evenMass
@@ -27,6 +28,7 @@ private abbrev ExplicitInput := ∀ q a n : ℕ, 3≤q → q≤105 → a<q → N
 private abbrev Parent := ∀ q a n : ℕ, 1≤q → q≤105 → Nat.Coprime a q → 10^16≤n →
   (n:ℝ)<Real.exp (Real.exp (19/5)) → |ap q a n-(n:ℝ)/q.totient| ≤ (n:ℝ)/100
 
+/-- Specialize the explicit progression bound and recover the two omitted moduli. -/
 theorem fromBMOR (bmor : ExplicitInput)
     (nonunit : ∀ q n : ℕ, 1≤q → 1≤n →
       (∑ k ∈ (Finset.range (n+1)).filter (fun k => ¬ Nat.Coprime k q), ArithmeticFunction.vonMangoldt k)
@@ -95,6 +97,7 @@ private theorem ap_theta (q a n : ℕ) : 0 ≤ ap q a n - theta q a n ∧
     intro k _
     split_ifs <;> simp_all [ArithmeticFunction.vonMangoldt_nonneg]
 
+/-- A global higher-power budget bounds the contribution in every residue class. -/
 theorem fromTheta
     (primes : ∀ q a n : ℕ, 1 ≤ q → q ≤ 105 → Nat.Coprime a q → 10^16 ≤ n →
       (n:ℝ) < Real.exp (Real.exp (19/5)) → |theta q a n - (n:ℝ)/q.totient| ≤ (n:ℝ)/200)
