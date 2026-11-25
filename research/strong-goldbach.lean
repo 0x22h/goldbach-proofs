@@ -117,32 +117,106 @@ private theorem measurableArcs (n : ℕ) : MeasurableSet (arcs n) := by
   exact MeasurableSet.iUnion fun _ =>
     (isClosed_le (continuous_abs.comp (continuous_id.sub continuous_const)) continuous_const).measurableSet
 
+private def kernelIntegrand (n : ℕ) (v : ℝ → ℝ) (t : ℝ) :=
+  (arcs n)ᶜ.indicator
+    (fun u => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) t
+
+private theorem kernelIntegrable (n : ℕ) (v : ℝ → ℝ) (hv : Continuous v) :
+    IntervalIntegrable (kernelIntegrand n v) MeasureTheory.volume (0:ℝ) 1 := by
+  have cont : Continuous (fun u : ℝ => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) := by
+    unfold spec phase
+    fun_prop
+  have h := cont.intervalIntegrable (μ := MeasureTheory.volume) 0 1
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)] at h ⊢
+  exact h.indicator (measurableArcs n).compl
+
 theorem packetPartition (n : ℕ) :
     (pair n (high n) (high n)).re = J n (K n) + J n (fun t => 1-K n t) := by
   let F := fun t : ℝ => spec n (high n) t * spec n (high n) t * phase (-(n:ℝ)*t)
-  let T := fun (v : ℝ → ℝ) (t : ℝ) =>
-    (arcs n)ᶜ.indicator (fun u => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) t
+  let T := kernelIntegrand n
   have hK : Continuous (K n) := by unfold K; fun_prop
-  have integrable (v : ℝ → ℝ) (hv : Continuous v) :
-      IntervalIntegrable (T v) MeasureTheory.volume (0:ℝ) 1 := by
-    have cont : Continuous (fun u : ℝ => (v u:ℂ)*spec n (high n) u*spec n (high n) u*phase (-(n:ℝ)*u)) := by
-      unfold spec phase
-      fun_prop
-    have h := cont.intervalIntegrable (μ := MeasureTheory.volume) 0 1
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)] at h ⊢
-    exact h.indicator (measurableArcs n).compl
   have partition : (fun t => (arcs n)ᶜ.indicator F t) =
       fun t => T (K n) t + T (fun u => 1-K n u) t := by
     funext t
     by_cases ht : t ∈ (arcs n)ᶜ
-    · simp only [F, T, Set.indicator_of_mem ht, Complex.ofReal_sub, Complex.ofReal_one]
+    · simp only [F, T, kernelIntegrand, Set.indicator_of_mem ht, Complex.ofReal_sub, Complex.ofReal_one]
       ring
-    · simp [T, ht]
+    · simp [T, kernelIntegrand, ht]
   unfold pair J
   change (intervalIntegral (fun t => (arcs n)ᶜ.indicator F t) 0 1 MeasureTheory.volume).re = _
   have hD : Continuous (fun t : ℝ => 1 - K n t) := continuous_const.sub hK
-  rw [partition, intervalIntegral.integral_add (integrable (K n) hK)
-    (integrable (fun t => 1 - K n t) hD)] <;> rfl
+  rw [partition, intervalIntegral.integral_add (kernelIntegrable n (K n) hK)
+    (kernelIntegrable n (fun t => 1 - K n t) hD)] <;> rfl
+
+private def cutoff (n : ℕ) : ℝ := 1 / (2304 * (1 + (Real.log (n:ℝ))^2))
+private def small (n : ℕ) (t : ℝ) :=
+  max (-(cutoff n)) (min (cutoff n) (1 - K n t))
+private def rest (n : ℕ) (t : ℝ) := 1 - K n t - small n t
+
+theorem restZero (n : ℕ) (t : ℝ) (h : |1-K n t| ≤ cutoff n) : rest n t = 0 := by
+  rcases abs_le.mp h with ⟨hl,hu⟩
+  simp only [rest, small, min_eq_right hu, max_eq_right hl, sub_self]
+
+private theorem defectSplit (n : ℕ) :
+    J n (fun t => 1-K n t) = J n (small n) + J n (rest n) := by
+  have hk : Continuous (K n) := by unfold K; fun_prop
+  have hd : Continuous (fun t : ℝ => 1-K n t) := continuous_const.sub hk
+  have hs : Continuous (small n) := continuous_const.max (continuous_const.min hd)
+  have hr : Continuous (rest n) := hd.sub hs
+  have hsum : kernelIntegrand n (fun t => 1-K n t) = fun t =>
+      kernelIntegrand n (small n) t + kernelIntegrand n (rest n) t := by
+    funext t
+    by_cases ht : t ∈ (arcs n)ᶜ
+    · simp only [kernelIntegrand, Set.indicator_of_mem ht, rest, Complex.ofReal_sub, Complex.ofReal_one]
+      ring
+    · simp [kernelIntegrand, ht]
+  change (intervalIntegral (kernelIntegrand n _) 0 1 MeasureTheory.volume).re = _
+  rw [hsum, intervalIntegral.integral_add (kernelIntegrable n _ hs) (kernelIntegrable n _ hr)] <;> rfl
+
+private theorem energyControl {n : ℕ} {a : ℝ} (ha : 0 ≤ a) {v : ℝ → ℝ}
+    (hv : ∀ t, |v t| ≤ a) :
+    |J n v| ≤ a * intervalIntegral (fun t => ‖spec n (high n) t‖^2) 0 1 MeasureTheory.volume := by
+  have hp (x : ℝ) : ‖phase x‖ = 1 := by simp [phase, Complex.norm_exp]
+  have pt (t : ℝ) : ‖kernelIntegrand n v t‖ ≤ a * ‖spec n (high n) t‖^2 := by
+    by_cases ht : t ∈ (arcs n)ᶜ
+    · simp only [kernelIntegrand, Set.indicator_of_mem ht, norm_mul, hp, mul_one, Complex.norm_real,
+        Real.norm_eq_abs, pow_two, ← mul_assoc]
+      gcongr
+      exact hv t
+    · simpa [kernelIntegrand, ht] using mul_nonneg ha (sq_nonneg ‖spec n (high n) t‖)
+  have hc : Continuous (fun t : ℝ => a * ‖spec n (high n) t‖^2) := by unfold spec phase; fun_prop
+  have hi := intervalIntegral.norm_integral_le_of_norm_le
+    (f := kernelIntegrand n v) (by norm_num : (0:ℝ) ≤ 1)
+    (Filter.Eventually.of_forall fun t _ => pt t) (hc.intervalIntegrable (μ := MeasureTheory.volume) 0 1)
+  rw [intervalIntegral.integral_const_mul] at hi
+  exact (Complex.abs_re_le_norm _).trans hi
+
+theorem clippedBound
+    (energy : ∀ n : ℕ, 2 ≤ n → intervalIntegral (fun t => ‖spec n (high n) t‖^2)
+      0 1 MeasureTheory.volume ≤ ((n:ℝ)+1)*(Real.log (n:ℝ))^2) :
+    ∀ n : ℕ, 2 ≤ n → |J n (small n)| ≤ (n:ℝ)/1152 := by
+  intro n hn
+  have ht : 0 ≤ cutoff n := by unfold cutoff; positivity
+  have cap (t : ℝ) : |small n t| ≤ cutoff n := by
+    apply abs_le.mpr
+    exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+  apply (energyControl ht cap).trans
+  apply (mul_le_mul_of_nonneg_left (energy n hn) ht).trans
+  unfold cutoff
+  have hn' : (2:ℝ) ≤ n := by exact_mod_cast hn
+  have hlog := sq_nonneg (Real.log (n:ℝ))
+  field_simp
+  nlinarith [mul_nonneg (sub_nonneg.mpr (show (1:ℝ) ≤ n by linarith)) hlog]
+
+theorem restToDefect
+    (cap : ∀ n : ℕ, 2 ≤ n → |J n (small n)| ≤ (n:ℝ)/1152)
+    (far : ∃ N : ℕ, ∀ n ≥ N, Even n → -(n:ℝ)/1152 ≤ J n (rest n)) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → -(n:ℝ)/576 ≤ J n (fun t => 1-K n t) := by
+  obtain ⟨N,hN⟩ := far
+  refine ⟨max 2 N, ?_⟩
+  intro n hn he
+  rw [defectSplit]
+  linarith only [(abs_le.mp (cap n (by omega))).1, hN n (by omega) he]
 
 theorem packetToBulk
     (packet : ∃ P : ℕ, ∀ n ≥ P, Even n → -(n:ℝ)/576 ≤ J n (K n))
