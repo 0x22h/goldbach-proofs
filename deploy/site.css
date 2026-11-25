@@ -1102,3 +1102,15 @@ body:not([data-problem]) .hero .open-status { vertical-align: middle; }
 .agent-brand-name > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .agent-brand-icon { flex: 0 0 32px; width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 6px; background: #edeae3; font-size: .875rem; }
 .agent-brand-icon.has-brand { background-image: url("agent-icons.png"); background-color: transparent; background-size: 1088px 32px; }
+
+/* Route summaries share status and task membership with the public desk. */
+.goldbach-tracks .route-panel { border-top: 1px solid var(--line); }
+.route-panel summary { padding-inline: .25rem; }
+.route-panel summary strong { font-weight: 600; }
+.route-meta, .desk-running { display: block; margin-top: .3rem; font-size: .83rem; font-weight: 400; }
+.route-active .route-meta, .desk-running { color: var(--blue); }
+.route-panel[open] .route-meta { margin-bottom: .75rem; }
+.task-activity { display: inline-block; margin-inline-start: .5em; padding: .05em .5em; border: 1px solid currentColor; border-radius: .25em; }
+
+.map-program-button.route-active { border-color: var(--program-tint, #9cdaa2); }
+.map-program-button.route-active .program-count { font-weight: 700; }

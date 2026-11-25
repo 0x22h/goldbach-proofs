@@ -111,7 +111,7 @@ def claim(path, requested, problem):
     branch = f"goldbach/{gap['id']}/{secrets.token_hex(4)}"
     state = {
         "base": base, "branch": branch, "handle": handle, "gap": expected,
-        "token": lease["token"], "problem": problem,
+        "token": lease["token"], "problem": problem, "route_id": response.get("route_id"),
     }
     try:
         save(path, state)
@@ -121,8 +121,33 @@ def claim(path, requested, problem):
         path.unlink(missing_ok=True)
         raise
     print(json.dumps({
-        "gap": expected, "branch": branch, "handle": handle, "expires_at": lease["expires_at"],
+        "gap": expected, "route_id": state["route_id"], "branch": branch, "handle": handle, "expires_at": lease["expires_at"],
     }, ensure_ascii=False, indent=2))
+
+
+def open_pr(state):
+    problem, route, gap = state["problem"], state.get("route_id"), state["gap"]["id"]
+    if not route or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", route):
+        raise SystemExit("This lease predates route receipts. Open the PR manually and submit its number as usual.")
+    branch = current_branch()
+    handle = authenticated_login()
+    if branch != state["branch"] or handle.casefold() != state["handle"].casefold():
+        raise SystemExit("Use the checkout and GitHub account that claimed this task.")
+    head = branch if handle.casefold() == REPO.split("/")[0].casefold() else f"{handle}:{branch}"
+    # gh resolves an existing PR by head and base before creating another.
+    matches = json.loads(command("gh", "pr", "list", "--repo", REPO, "--base", "main",
+                                 "--head", branch, "--state", "open", "--json", "url,headRepositoryOwner"))
+    for pr in matches:
+        if pr["headRepositoryOwner"]["login"].casefold() == handle.casefold():
+            print(pr["url"])
+            return
+    title = f"[{problem}/{route}] Prove {gap}"
+    body = f"Problem: {problem}\nRoute: {route}\nLemma: {gap}\nFile: {state['gap']['file']}\n"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "proof-pr.md"
+        path.write_text(body, encoding="utf-8")
+        subprocess.run(["gh", "pr", "create", "--repo", REPO, "--base", "main", "--head", head,
+                        "--title", title, "--body-file", str(path)], check=True)
 
 
 def submit(path, state, number, agent=None):
@@ -192,6 +217,7 @@ def main():
     request = modes.add_parser("claim", help="claim a lemma and create its dedicated branch")
     request.add_argument("gap", nargs="?")
     request.add_argument("--problem", help="problem slug, e.g. no-three-in-line")
+    modes.add_parser("open-pr", help="open the route-labelled proof PR after pushing the branch")
     modes.add_parser("beat", help="renew the current lease")
     release = modes.add_parser("release", help="return an unfinished lemma")
     release.add_argument("reason", nargs="?", default="abandoned")
@@ -212,7 +238,9 @@ def main():
     if not path.is_file():
         parser.error("no lease in this checkout; run claim first")
     state = json.loads(path.read_text(encoding="utf-8"))
-    if args.action == "beat":
+    if args.action == "open-pr":
+        open_pr(state)
+    elif args.action == "beat":
         response = desk("beat", {}, state["token"], problem=state.get("problem", "goldbach"))
         lease = response.get("lease", response)
         print("Lease renewed.", lease.get("expires_at", ""))

@@ -1,5 +1,11 @@
 <!-- One pull request proves ONE statement the desk assigned. It adds exactly one file and changes nothing else. -->
 
+For proof PRs use `python tools/goldbach.py open-pr` after pushing. Manual title format: `[problem/route] Prove lemma-id`. Copy the problem and route ID from the claim receipt.
+
+**Problem slug**:
+
+**Route ID**:
+
 **Gap id** (from the desk, for example `L-gct-101`):
 
 **The one file this adds** (the `file` the desk gave you):

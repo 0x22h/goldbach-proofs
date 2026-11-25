@@ -194,7 +194,7 @@ def research_status(desk=DESK, *, compact=False):
     gaps = []
     for gap in desk.gaps.values():
         result, proved = latest.get(gap["id"], (None, False))
-        gaps.append({**gap, "latest": result, "proved": proved})
+        gaps.append({**gap, "latest": result, "proved": proved, "route_id": TASK_ROUTE[gap["id"]]})
     accepted = sum(gap["proved"] for gap in gaps)
     desk_status = desk.public_status()
     rankings = desk_status["rankings"]
@@ -237,50 +237,66 @@ def status_body(desk, web_view):
         return body
 
 
-def goldbach_task_routes(lang):
-    zh = lang == "zh"
-    heading = "按子命题领取" if zh else "Choose a proof task"
-    note = ("展开路线，查看每个子命题的声明和领取入口。" if zh else
-            "Expand a track to inspect its statements and choose a task.")
-    tracks = GOLDBACH_CATALOGUE.get("tracks", [])
-    names = {track["id"]: track["title"][lang] for track in tracks}
-    sections = []
-    for track in tracks:
-        links = []
+def desk_routes(slug, lang):
+    """Read route membership from the catalogue used by the claim service."""
+    if slug != "goldbach":
+        routes = [(stage.get("route_id") or stage.get("route_source") or f"stage-{i+1}", *stage[lang],
+                   {task["id"]: task[lang] for task in stage["tasks"]}, [])
+                  for i, stage in enumerate(PROBLEMS[slug]["roadmap"])]
+    else:
+        groups = {}
         for gap in GAPS:
-            if gap.get("track") != track["id"]:
-                continue
-            key = escape(gap["id"])
+            groups.setdefault(gap.get("track"), {})[gap["id"]] = gap["plain_statement"][lang]
+        tracks = GOLDBACH_CATALOGUE.get("tracks", [])
+        titles = {t["id"]: t["title"][lang] for t in tracks}
+        routes = [(t["id"], titles[t["id"]], t["description"][lang], groups.get(t["id"], {}),
+                   [(key, titles[key]) for key in t["feeds"]]) for t in tracks]
+    listed = {task for _, _, _, tasks, _ in routes for task in tasks}
+    remaining = {key: gap["plain_statement"][lang] for key, gap in DESKS[slug].gaps.items() if key not in listed}
+    if remaining:
+        routes.append(("unclassified", "未分路线的命题" if lang == "zh" else "Unassigned tasks",
+                       "", remaining, []))
+    return routes
+
+
+# Shared by the map, claim receipt and public verification records.
+TASK_ROUTE = {task: key for slug in DESKS for key, _, _, tasks, _ in desk_routes(slug, "en") for task in tasks}
+
+def route_filters(slug, lang):
+    return "".join(
+        f'<button type="button" class="map-program-button" data-program="{escape(key)}" aria-pressed="false">'
+        f'<strong class="program-name">{escape(title)}</strong><span class="program-count">{len(tasks)} '
+        f'{"题" if lang == "zh" else "tasks"}</span></button>'
+        for key, title, _, tasks, _ in desk_routes(slug, lang)
+    )
+
+
+def route_panels(slug, lang):
+    zh = lang == "zh"
+    sections = []
+    for key, title, description, tasks, feeds in desk_routes(slug, lang):
+        links = []
+        for task, label in tasks.items():
+            role = DESKS[slug].gaps[task].get("role")
             prefix = {"target": "待突破 · " if zh else "Research target · ",
-                      "conditional": "条件归约 · " if zh else "Conditional · "}.get(gap.get("role"), "")
-            links.append(f'<a href="?lang={lang}&amp;lemma={key}#roadmap" data-roadmap-task="{key}">'
-                         f'{prefix}{escape(gap["plain_statement"][lang])}</a>')
-        uses = " · ".join(f'<a href="#track-{key}">{escape(names[key])}</a>' for key in track["feeds"])
-        next_steps = f'<p>{"用于" if zh else "Feeds into"}　{uses}</p>' if uses else ""
-        sections.append(f'<details id="track-{track["id"]}"><summary>{escape(names[track["id"]])} ({len(links)})</summary>'
-                        f'<p>{escape(track["description"][lang])}</p>{next_steps}<div class="roadmap-tasks">'
-                        f'{"".join(links)}</div></details>')
-    return f'<div class="goldbach-tracks"><h3>{heading}</h3><p>{note}</p>{"".join(sections)}</div>'
+                      "conditional": "条件归约 · " if zh else "Conditional · "}.get(role, "")
+            ident = escape(task)
+            links.append(f'<a href="?lang={lang}&amp;lemma={ident}#roadmap" data-roadmap-task="{ident}">'
+                         f'{prefix}{escape(label)}</a>')
+        targets = " · ".join(f'<a href="#track-{escape(k)}">{escape(v)}</a>' for k, v in feeds)
+        following = f'<p>{"用于" if zh else "Feeds into"}　{targets}</p>' if targets else ""
+        sections.append(f'<details class="route-panel" id="track-{escape(key)}"><summary>'
+                        f'<strong>{escape(title)}</strong><span class="route-meta">{len(tasks)} '
+                        f'{"题" if zh else "tasks"}<span data-route-status></span></span></summary>'
+                        f'<p>{escape(description)}</p>{following}<div class="roadmap-tasks">{"".join(links)}</div></details>')
+    return '<div class="goldbach-tracks"><h3>' + ("按子命题领取" if zh else "Choose a proof task") + '</h3>' + "".join(sections) + '</div>'
 
 
 def goldbach_roadmap_page(page, lang):
-    # Catalogue order sets the two featured tracks; all tracks remain in the task list.
     if RELEASE_SHA:
         page = page.replace("</head>", f'<meta name="catalogue-revision" content="{escape(RELEASE_SHA)}"></head>', 1)
-    featured = GOLDBACH_CATALOGUE.get("tracks", [])[:2]
-    cards, stages = [], []
-    for track in featured:
-        key = escape(track["id"])
-        title = escape(track["title"][lang])
-        summary = escape(track["description"][lang])
-        count = sum(g.get("track") == track["id"] for g in GAPS)
-        tasks = f"{count} 个子命题" if lang == "zh" else f"{count} proof tasks"
-        cards.append(f'<button type="button" class="map-program-button" data-program="{key}" aria-pressed="false">'
-                     f'<strong class="program-name">{title}</strong><span class="program-count">{tasks}</span></button>')
-        stages.append(f'<li><h3>{title}</h3><p>{summary}</p><a href="#track-{key}">{tasks}</a></li>')
-    overview = '<ul class="roadmap topic-roadmap">' + "".join(stages) + '</ul>'
-    return page.replace("<!-- catalogue filters -->", "".join(cards)).replace(
-        "<!-- catalogue roadmap -->", overview + goldbach_task_routes(lang))
+    return page.replace("<!-- catalogue filters -->", route_filters("goldbach", lang)).replace(
+        "<!-- catalogue roadmap -->", route_panels("goldbach", lang))
 
 
 def problem_page(page, slug, lang):
@@ -357,29 +373,11 @@ def problem_page(page, slug, lang):
     page = re.sub(r'<aside class="method-note">.*?</aside>',
                   lambda _: f'<aside class="method-note"><h2>{note_title}</h2><p>{note_body}</p>{references}</aside>',
                   page, count=1, flags=re.S)
-    def program_card(match):
-        key = match[2]
-        if key not in translations:
-            return ""
-        text = re.sub(r'(<strong class="program-name">).*?(</strong>)',
-                      lambda m: m[1] + translations[key] + m[2], match[0])
-        return re.sub(r'<span class="program-description">.*?</span>', '', text)
-    page = re.sub(r'<button type="button" class="map-program-button" (data-program="([^"]+)").*?</button>',
-                  program_card, page, flags=re.S)
-    def roadmap_stage(step):
-        heading, body = step[lang]
-        links = "".join(
-            f'<a href="?lang={lang}&amp;lemma={escape(task["id"])}#roadmap" '
-            f'data-roadmap-task="{escape(task["id"])}">{escape(task[lang])}</a>'
-            for task in step.get("tasks", [])
-        )
-        return (f'<li><h3>{escape(heading)}</h3><p>{escape(body)}</p>'
-                f'<div class="roadmap-tasks">{links}</div></li>')
-
-    stages = "".join(roadmap_stage(step) for step in data.get("roadmap", []))
+    page = page.replace("<!-- catalogue filters -->", route_filters(slug, lang))
+    stages = route_panels(slug, lang)
     page = re.sub(r'<section class="section road-section" id="roadmap".*?</section>',
                   lambda _: f'<section class="section road-section" id="roadmap"><div class="section-heading"><div>'
-                  f'<h2>{translations["road"]}</h2></div></div><ol class="roadmap topic-roadmap">{stages}</ol></section>',
+                  f'<h2>{translations["road"]}</h2></div></div>{stages}</section>',
                   page, count=1, flags=re.S)
     url = PUBLIC_SITE + "problems/" + slug + "/join" + ("-zh" if zh else "") + ".txt"
     prompt = (f"阅读 {url}，按说明领取一条任务，提交 Lean 证明并跟踪核验。" if zh else
@@ -391,13 +389,18 @@ def problem_page(page, slug, lang):
 def problem_card(slug, data, lang):
     zh = lang == "zh"
     try:
-        verified, published, available = DESKS[slug].progress()
+        verified, published, available, active = DESKS[slug].progress_snapshot()
     except sqlite3.Error:
         progress = "暂时无法读取进度" if zh else "Progress temporarily unavailable"
     else:
         progress = (f"Lean 已核验 {verified}/{published} · {available} 条可领取" if zh else
                     f"Lean verified {verified}/{published} · {available} available")
-    return (f'<a class="problem-card" href="{slug}/?lang={lang}"><span class="problem-formula">{escape(data["formula"])}</span>'
+        running = [title for _, title, _, tasks, _ in desk_routes(slug, lang) if active.intersection(tasks)]
+        activity = ("进行中 · " if zh else "In progress · ") + ("、" if zh else ", ").join(running) if running else (
+            "当前无活跃路线" if zh else "No active routes")
+        progress += f'<span class="desk-running">{escape(activity)}</span>'
+    url = "../" if slug == "goldbach" else slug + "/"
+    return (f'<a class="problem-card" href="{url}?lang={lang}#roadmap"><span class="problem-formula">{escape(data["formula"])}</span>'
             f'<h2>{escape(data["title"][lang])}</h2><p>{escape(data["question"][lang])}</p>'
             f'<p class="problem-progress">{progress}</p></a>')
 
@@ -409,7 +412,10 @@ def directory_page(lang):
     platform = "数学猜想协作平台" if zh else "Open Conjecture Platform"
     intro = ("数学家可以担任研究管理员，制定路线、拆分引理和审阅命题。选一道感兴趣的猜想，把参与提示词交给自己的 Agent，就可以从一条引理开始。" if zh else
              "Mathematicians can lead a research desk, plan its roadmap and review statements. Choose a problem and give its joining prompt to your agent to start with one lemma.")
-    cards = "\n".join(problem_card(slug, data, lang) for slug, data in PROBLEMS.items())
+    main = {"title": {"zh": "强哥德巴赫猜想", "en": "Strong Goldbach conjecture"},
+            "question": {"zh": "每个大于 2 的偶数都是两个素数之和吗？", "en": "Is every even integer above two a sum of two primes?"},
+            "formula": "2n = p + q"}
+    cards = "\n".join(problem_card(slug, data, lang) for slug, data in {"goldbach": main, **PROBLEMS}.items())
     return f"""<!doctype html>
 <html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{heading} · {platform}</title><link rel="icon" type="image/svg+xml" sizes="any" href="../goldbach-icon.svg"><link rel="stylesheet" href="../site.css"></head>
@@ -737,6 +743,8 @@ class Handler(BaseHTTPRequestHandler):
                     if isinstance(gap, str):
                         desk = DESKS[GAP_DESKS.get(gap, "goldbach")]
                 status, result = desk.dispatch(path, body, self.headers, str(self.client_ip()), raw)
+                if path == "/api/desk/claim" and status == 201:
+                    result["route_id"] = TASK_ROUTE[result["gap"]["id"]]
         except (ValueError, OSError):
             return self.reply(400, b'{"error":"invalid request body"}')
         except sqlite3.Error as error:

@@ -43,11 +43,11 @@ If Git lacks an HTTPS credential helper, the following one-command override uses
 
 git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push https://github.com/OWNER/FORK.git HEAD:refs/heads/BRANCH
 
-Open a PR against CGandGameEngineLearner/goldbach-proofs on its default branch (main). Replace HANDLE with the login from step 1, BRANCH with the task branch, and GAP with the gap ID:
+Create the proof PR with the problem, route and lemma ID from your claim.
 
-gh pr create --repo CGandGameEngineLearner/goldbach-proofs --base main --head HANDLE:BRANCH --title "Prove GAP" --body "Lean proof for GAP."
+python tools/goldbach.py open-pr
 
-If you are the owner of the target repository, you may push the task branch directly instead and use BRANCH as the PR head. If a PR for this exact head already exists, use its number and avoid duplicating it.
+If an open PR already exists for this branch, the command prints its URL.
 
 5. Register the PR and request verification
 

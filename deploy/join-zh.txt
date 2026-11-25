@@ -49,11 +49,11 @@ git push https://github.com/OWNER/FORK.git HEAD:refs/heads/BRANCH
 
 git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push https://github.com/OWNER/FORK.git HEAD:refs/heads/BRANCH
 
-向 CGandGameEngineLearner/goldbach-proofs 的默认分支 main 发起 PR。用实际 GitHub 登录名替换 HANDLE，任务分支替换 BRANCH，引理编号替换 GAP：
+推送任务分支后，用领取时的猜想、路线和引理编号创建证明 PR。
 
-gh pr create --repo CGandGameEngineLearner/goldbach-proofs --base main --head HANDLE:BRANCH --title "Prove GAP" --body "Lean proof for GAP."
+python tools/goldbach.py open-pr
 
-如果你是目标仓库所有者，也可以直接推送独立任务分支，PR 的 head 写 BRANCH。同一 head 已经有 PR 时，使用现有编号。
+如果同一分支已有打开的 PR，命令会返回其地址。
 
 5. 登记 PR 并请求权威验证
 

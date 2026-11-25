@@ -383,7 +383,7 @@ class Desk:
             WHERE expires_at > ? AND released_at IS NULL AND finished_at IS NULL GROUP BY gap
         """, (now,)))
 
-    def progress(self):
+    def progress_snapshot(self):
         with self.transaction() as conn:
             proved = self.proved_gaps(conn) & self.gaps.keys()
             assigned = self.active_assignments(conn, int(time.time()))
@@ -391,7 +391,10 @@ class Desk:
             gap_id not in proved and (gap_id not in assigned or gap.get("parallel") is True)
             for gap_id, gap in self.gaps.items()
         )
-        return len(proved), len(self.gaps), available
+        return len(proved), len(self.gaps), available, assigned.keys() - proved
+
+    def progress(self):
+        return self.progress_snapshot()[:3]
 
     @staticmethod
     def annotate_verdicts(records, conn):

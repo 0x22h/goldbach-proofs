@@ -34,6 +34,13 @@ class CatalogueTests(unittest.TestCase):
     def test_roadmap_links_resolve_within_their_own_problem(self):
         for slug, problem in PROBLEMS.items():
             ids = {gap["id"] for gap in problem["gaps"]}
+            routes = [s.get("route_id") or s["route_source"] for s in problem["roadmap"]]
+            self.assertEqual(len(routes), len(set(routes)))
+            members = [t["id"] for s in problem["roadmap"] for t in s["tasks"]]
+            self.assertEqual(len(members), len(set(members)))
+            for route in routes:
+                self.assertRegex(route, r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+                self.assertNotEqual(route, "unclassified")
             for stage in problem["roadmap"]:
                 with self.subTest(problem=slug, stage=stage["en"][0]):
                     self.assertTrue(stage["tasks"])

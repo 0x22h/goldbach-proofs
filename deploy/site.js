@@ -144,6 +144,7 @@ const pageSelect = document.getElementById('lemma-page');
 const pageSize = 24;
 
 let publishedGaps = [];
+let gapRoutes = new Map();
 let assignments = {};
 let selectedProgram = '';
 let selectedGap = null;
@@ -163,7 +164,7 @@ function messageRow(label, link) {
 }
 
 function programOf(gap) {
-  return programs.has(gap.track) ? gap.track : gap.program || 'foundation';
+  return gap.route_id || gap.track || 'unclassified';
 }
 
 function programName(key) {
@@ -187,15 +188,19 @@ function canClaim(gap) {
 }
 
 function renderProgramCounts() {
-  const counts = new Map(Array.from(programs.keys(), key => [key, { published: 0, verified: 0 }]));
+  const counts = new Map(Array.from(programs.keys(), key => [key, { published: 0, verified: 0, active: 0 }]));
   for (const gap of publishedGaps) {
     const count = counts.get(programOf(gap));
     if (!count) continue;
     count.published += 1;
     if (gap.proved) count.verified += 1;
+    if (assigned(gap)) count.active++;
   }
   for (const [key, count] of counts) {
-    programs.get(key).querySelector('.program-count').textContent = strings.programCount(count.verified, count.published);
+    const button = programs.get(key);
+    button.classList.toggle('route-active', count.active > 0);
+    button.querySelector('.program-count').textContent = strings.programCount(count.verified, count.published)
+      + ' · ' + count.active + (lang === 'zh' ? ' 进行中' : ' in progress');
   }
 }
 
@@ -217,6 +222,32 @@ mapReset.addEventListener('click', () => {
   programs.get(selectedProgram)?.focus();
   chooseProgram('');
 });
+
+function updateRouteActivity(gaps) {
+  const byId = new Map(gaps.map(gap => [gap.id, gap]));
+  for (const panel of document.querySelectorAll('.route-panel')) {
+    const counts = { working: 0, submitted: 0, checking: 0, proved: 0 };
+    for (const link of panel.querySelectorAll('[data-roadmap-task]')) {
+      const gap = byId.get(link.dataset.roadmapTask);
+      if (!gap) continue;
+      const state = gap.proved ? 'proved' : assignments[gap.id];
+      if (Object.hasOwn(counts, state)) counts[state]++;
+      const badge = link.querySelector('.task-activity');
+      if (Object.hasOwn(strings.assignments, state)) {
+        const current = badge || element('small', '', 'task-activity');
+        current.textContent = strings.assignments[state];
+        if (!badge) link.append(current);
+      } else if (badge) badge.remove();
+    }
+    const active = counts.working + counts.submitted + counts.checking;
+    panel.classList.toggle('route-active', active > 0);
+    const parts = ['working', 'submitted', 'checking']
+      .filter(key => counts[key]).map(key => counts[key] + ' ' + strings.assignments[key]);
+    if (!active) parts.push(lang === 'zh' ? '暂无进行中任务' : 'No active tasks');
+    parts.push(counts.proved + (lang === 'zh' ? ' 已核验' : ' verified'));
+    panel.querySelector('[data-route-status]').textContent = ' · ' + parts.join(' · ');
+  }
+}
 
 function openGap(id) {
   selectedGap = id;
@@ -326,6 +357,8 @@ let graphGaps = [];
 let graphTargets = [];
 function drawNetwork() {
   const w = graph.clientWidth;
+  const keys = selectedProgram ? [selectedProgram] : [...new Set(graphGaps.map(programOf))];
+  graph.style.height = !selectedProgram && keys.length > 6 ? Math.ceil(keys.length / 2) * 90 + 'px' : '';
   const h = graph.clientHeight;
   const ctx = graph.getContext('2d');
   if (!ctx || !w || !h) return;
@@ -356,7 +389,6 @@ function drawNetwork() {
     ctx.fillStyle = color;
     ctx.fillText(text, p.x, p.y + 4, width);
   }
-  const keys = selectedProgram ? [selectedProgram] : [...programs.keys()];
   keys.forEach((key, index) => {
     const gaps = graphGaps.filter(gap => programOf(gap) === key);
     if (!gaps.length) return;
@@ -452,6 +484,11 @@ previousPage.addEventListener('click', () => setPage(lemmaPage - 1));
 nextPage.addEventListener('click', () => setPage(lemmaPage + 1));
 pageSelect.addEventListener('change', () => setPage(Number(pageSelect.value)));
 
+function appendRouteLink(parent, id) {
+  const route = gapRoutes.get(id);
+  if (route && programs.has(route)) parent.append(anchor(programName(route), '#track-' + route, 'log-note'));
+}
+
 function renderLogEntry(run) {
   const article = element('article');
   article.dataset.run = run.run_id + '/' + run.run_attempt;
@@ -462,6 +499,7 @@ function renderLogEntry(run) {
     element('code', run.lemma_id, 'log-id'),
     element('span', strings.attempt + ' ' + run.run_attempt + ' · #' + run.run_id, 'log-note')
   );
+  appendRouteLink(label, run.lemma_id);
   row.append(label, verdictTag(strings[judgement], judgement), runLink(run, strings.run));
   article.append(row);
   if (run.agent) {
@@ -490,6 +528,7 @@ function renderActivity(event) {
   const label = Object.hasOwn(strings.activities, event.kind) ? strings.activities[event.kind] : strings.event;
   const byline = element('div', undefined, 'activity-byline');
   byline.append(element('span', event.handle || strings.participant), element('code', event.lemma_id));
+  appendRouteLink(byline, event.lemma_id);
   details.append(element('strong', label), byline);
 
   const links = element('div', undefined, 'activity-links');
@@ -875,6 +914,8 @@ async function loadStatus() {
     const gapsSnapshot = JSON.stringify([gaps, assignments]);
     if (lastGaps !== gapsSnapshot) {
       publishedGaps = gaps;
+      gapRoutes = new Map(gaps.map(gap => [gap.id, programOf(gap)]));
+      updateRouteActivity(gaps);
       renderProgramCounts();
       renderLemmas();
       if (lemmaDialog.open) renderGapDetail();

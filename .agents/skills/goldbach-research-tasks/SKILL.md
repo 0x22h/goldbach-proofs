@@ -55,6 +55,8 @@ description: 为哥德巴赫研究台及分站自动盘点剩余困难命题，�
 
 ## 编辑研究台
 
+新增任务先按[分目录发布约定](../../../research/problems/README.md)放进所属研究台、路线的 tasks 目录。每个 ID 单独建文件。复用引理通过 depends_on 引用。运行 `python research/build_catalogue.py --write` 后一并提交生成清单。已发布任务和在审 PR 沿用原路径。以下字段和验证约定两种格式共用。
+
 - 哥德巴赫主站使用 [gaps.json](../../../research/gaps.json) 中的 `gaps`、`tracks` 和 `feeds`。每道新题关联有效的 `track`、`program` 和适当的 `role`。主线数学方向改变时更新 [ROADMAP.md](../../../research/ROADMAP.md)，并核对中英文首页的路线摘要。
 - 分站使用 [problems.json](../../../research/problems.json) 对应 slug 下的 `gaps` 与 `roadmap`。在阶段的 `tasks` 中引用同一分站的题目 ID，并为阶段和任务填写中英文文本。只改阶段顺序、说明或引用时，可保留原有题目。
 - 遵循同分支相邻记录的字段和 [目录测试](../../../research/test_catalogue.py)。例如 `L-goldbach-example` 对应模块 `PEqualNP.Outside.L_goldbach_example`、文件 `lean/PEqualNP/Outside/L_goldbach_example.lean`。全站 ID、模块名和文件路径须唯一。填写完整 `statement`、两种语言的 `plain_statement` 与 `brief`、可核对的 `source`，按实际情况设置 `parallel`。使用项目允许的导入。

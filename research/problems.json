@@ -3583,7 +3583,8 @@
             "zh": "满额构型的行列约束",
             "en": "Rows and columns at saturation"
           }
-        ]
+        ],
+        "route_id": "define-the-problem-and-count-by-rows"
       },
       {
         "zh": [
@@ -3605,7 +3606,8 @@
             "zh": "双曲线的割线",
             "en": "Secants of the hyperbola"
           }
-        ]
+        ],
+        "route_id": "formalize-two-modular-constructions"
       },
       {
         "zh": [
@@ -3627,7 +3629,8 @@
             "zh": "两周期点阵构造",
             "en": "The two-period construction"
           }
-        ]
+        ],
+        "route_id": "check-every-triple-in-the-two-period-lift"
       },
       {
         "zh": [
@@ -3644,7 +3647,8 @@
             "zh": "从素数边长推到一般边长",
             "en": "Pass from prime scales to all grids"
           }
-        ]
+        ],
+        "route_id": "transfer-the-baseline-to-general-sides"
       },
       {
         "zh": [
@@ -3661,7 +3665,8 @@
             "zh": "证明两类混合三点判据",
             "en": "Prove the mixed-secant criterion"
           }
-        ]
+        ],
+        "route_id": "test-additions-and-price-the-deletions"
       },
       {
         "zh": [
@@ -3683,7 +3688,8 @@
             "zh": "突破 3/2 密度",
             "en": "Beat density 3/2"
           }
-        ]
+        ],
+        "route_id": "prove-a-uniform-net-gain"
       },
       {
         "zh": [
@@ -3715,7 +3721,8 @@
             "zh": "欠饱和行数受总缺口控制",
             "en": "Bound unsaturated rows by the total deficit"
           }
-        ]
+        ],
+        "route_id": "row-capacity-and-slope-certificates"
       },
       {
         "zh": [
@@ -3752,7 +3759,8 @@
             "zh": "无水平点对时的空行增广保证",
             "en": "Free site in an empty row with a secant budget"
           }
-        ]
+        ],
+        "route_id": "augment-configurations-using-secant-conflicts"
       },
       {
         "zh": [
@@ -4604,7 +4612,8 @@
             "zh": "步向量 (28,5) 的全网格三连点计数",
             "en": "Grid triple count for stride (28,5)"
           }
-        ]
+        ],
+        "route_id": "count-forbidden-triples-by-primitive-direction"
       },
       {
         "zh": [
@@ -4651,7 +4660,8 @@
             "zh": "平均冲突预算推出无冲突子集",
             "en": "Convert a mean conflict budget into an independent sample"
           }
-        ]
+        ],
+        "route_id": "density-gain-via-candidates-and-conflict-covers"
       }
     ]
   },
@@ -8143,7 +8153,8 @@
             "zh": "用穿刺点给出下界",
             "en": "Count piercing points"
           }
-        ]
+        ],
+        "route_id": "certify-a-packing"
       },
       {
         "zh": [
@@ -8165,7 +8176,8 @@
             "zh": "五块的最优性下界",
             "en": "Prove five-square optimality"
           }
-        ]
+        ],
+        "route_id": "close-the-five-square-case"
       },
       {
         "zh": [
@@ -8187,7 +8199,8 @@
             "zh": "十一块的上界证书",
             "en": "An eleven-square upper certificate"
           }
-        ]
+        ],
+        "route_id": "narrow-the-eleven-square-interval"
       },
       {
         "zh": [
@@ -8219,7 +8232,8 @@
             "zh": "中心和半径给出精确边界余量",
             "en": "Exact containment test for a centered interval"
           }
-        ]
+        ],
+        "route_id": "separation-axes-and-boundary-slack"
       },
       {
         "zh": [
@@ -8256,7 +8270,8 @@
             "zh": "两个旋转方块的单轴分离证书",
             "en": "One-axis certificate for two oriented squares"
           }
-        ]
+        ],
+        "route_id": "certify-rotated-layouts-with-rational-parameters-and-separating-axes"
       },
       {
         "zh": [
@@ -9118,7 +9133,8 @@
             "zh": "由两条坐标轴合成全部有理朝向证书",
             "en": "Two-axis certificate for every nonnegative rational rotation"
           }
-        ]
+        ],
+        "route_id": "certify-container-bounds-for-candidate-orientations"
       }
     ]
   },
@@ -12909,7 +12925,8 @@
             "zh": "在倍增区间数整除解",
             "en": "Count roots on a dyadic interval"
           }
-        ]
+        ],
+        "route_id": "from-the-external-baseline-to-local-counts"
       },
       {
         "zh": [
@@ -12931,7 +12948,8 @@
             "zh": "给全部素因子的对数总量定下界",
             "en": "Lower-bound the total log mass"
           }
-        ]
+        ],
+        "route_id": "account-for-each-prime-divisor"
       },
       {
         "zh": [
@@ -12958,7 +12976,8 @@
             "zh": "把两段估计接到 1.32301",
             "en": "Transfer two bounds to 1.32301"
           }
-        ]
+        ],
+        "route_id": "prove-the-two-analytic-estimates"
       },
       {
         "zh": [
@@ -12985,7 +13004,8 @@
             "zh": "指数 2 的终点",
             "en": "Reach exponent 2"
           }
-        ]
+        ],
+        "route_id": "submit-an-unconditional-exponent"
       },
       {
         "zh": [
@@ -13017,7 +13037,8 @@
             "zh": "截断对数质量为正推出大素因子见证",
             "en": "Extract a large factor from positive truncated log mass"
           }
-        ]
+        ],
+        "route_id": "sieve-weights-and-large-factor-mass"
       },
       {
         "zh": [
@@ -13054,7 +13075,8 @@
             "zh": "每个中段奇素数在短窗口至多命中两次",
             "en": "At most two hits per odd middle prime in a short window"
           }
-        ]
+        ],
+        "route_id": "control-repeated-middle-prime-contributions-through-root-spacing"
       },
       {
         "zh": [
@@ -13906,7 +13928,8 @@
             "zh": "模 2309 的两条筛根及其完整性",
             "en": "Complete sieve roots modulo 2309"
           }
-        ]
+        ],
+        "route_id": "certify-local-roots-for-the-middle-prime-sieve"
       },
       {
         "zh": [
@@ -13973,7 +13996,8 @@
             "zh": "整个二进区间重复中段因子的对数级总损失",
             "en": "Logarithmic aggregate excess from repeated middle primes"
           }
-        ]
+        ],
+        "route_id": "split-middle-prime-mass-at-exponent-1-15"
       }
     ]
   },
@@ -17591,7 +17615,8 @@
             "zh": "上下容量约束的整数证书",
             "en": "Certificate for both boundaries"
           }
-        ]
+        ],
+        "route_id": "phase-ii-counts-and-certificates"
       },
       {
         "zh": [
@@ -17613,7 +17638,8 @@
             "zh": "无平方因子范数的临界值数",
             "en": "Counting thresholds on split shells"
           }
-        ]
+        ],
+        "route_id": "phase-ii-infinite-families"
       },
       {
         "zh": [
@@ -17635,7 +17661,8 @@
             "zh": "统一碰撞对的计数口径",
             "en": "Count ordered collision pairs"
           }
-        ]
+        ],
+        "route_id": "fix-the-counting-convention"
       },
       {
         "zh": [
@@ -17657,7 +17684,8 @@
             "zh": "何时恰好达到下界",
             "en": "Characterize equality"
           }
-        ]
+        ],
+        "route_id": "find-the-sharp-universal-minimum"
       },
       {
         "zh": [
@@ -17684,7 +17712,8 @@
             "zh": "二次模型的碰撞对总数",
             "en": "Exact total for the quadratic model"
           }
-        ]
+        ],
+        "route_id": "compare-two-teaching-models"
       },
       {
         "zh": [
@@ -17716,7 +17745,8 @@
             "zh": "用三元组总数控制重桶数",
             "en": "Triple counts bound the number of heavy buckets"
           }
-        ]
+        ],
+        "route_id": "finite-bucket-counts-and-capacity"
       },
       {
         "zh": [
@@ -17753,7 +17783,8 @@
             "zh": "构造达到精确下界的桶向量",
             "en": "Construct an occupancy vector attaining the floor"
           }
-        ]
+        ],
+        "route_id": "minimize-triple-counts-at-fixed-occupancy"
       },
       {
         "zh": [
@@ -18620,7 +18651,8 @@
             "zh": "任意有限负载表的高阶矩支撑线",
             "en": "Higher-moment supporting line for arbitrary finite loads"
           }
-        ]
+        ],
+        "route_id": "discrete-extremal-bounds-for-higher-occupancy-moments"
       }
     ]
   },
@@ -22225,7 +22257,8 @@
             "zh": "删列后保留见证",
             "en": "Preserve a witness after deletion"
           }
-        ]
+        ],
+        "route_id": "count-the-slice-and-recover-the-sharp-constant"
       },
       {
         "zh": [
@@ -22257,7 +22290,8 @@
             "zh": "提取单色矩形",
             "en": "Extract a monochromatic rectangle"
           }
-        ]
+        ],
+        "route_id": "turn-two-level-structure-into-a-protocol"
       },
       {
         "zh": [
@@ -22289,7 +22323,8 @@
             "zh": "核验 Hadamard 中央层参数",
             "en": "Check the Hadamard spectral margin"
           }
-        ]
+        ],
+        "route_id": "use-variance-to-certify-sparse-columns"
       },
       {
         "zh": [
@@ -22321,7 +22356,8 @@
             "zh": "构造线性规模的检测族",
             "en": "Seek a linear cyclic detector family"
           }
-        ]
+        ],
+        "route_id": "explore-new-columns-at-one-third-density"
       },
       {
         "zh": [
@@ -22353,7 +22389,8 @@
             "zh": "任意矩形覆盖的面积和控制矩阵面积",
             "en": "Area lower bound on a rectangle cover"
           }
-        ]
+        ],
+        "route_id": "restriction-and-coverage-of-monochromatic-rectangles"
       },
       {
         "zh": [
@@ -22390,7 +22427,8 @@
             "zh": "由总错误预算构造定量单色矩形",
             "en": "Extract a quantitative monochromatic rectangle from total error"
           }
-        ]
+        ],
+        "route_id": "extract-monochromatic-rectangles-from-sparse-opposite-entries"
       },
       {
         "zh": [
@@ -23257,7 +23295,8 @@
             "zh": "分配坐标给行层能否增大矩形",
             "en": "Determine when moving a coordinate increases area"
           }
-        ]
+        ],
+        "route_id": "construct-layer-rectangles-in-intersection-matrices"
       }
     ]
   }
