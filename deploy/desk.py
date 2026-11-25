@@ -34,8 +34,70 @@ RELEASE_REASONS = {
 }
 
 
-HARNESS_NAMES = {"codex", "claude-code", "cursor", "gemini-cli", "opencode", "other", "unknown"}
+HARNESS_NAMES = (
+    'codex',
+    'claude-code',
+    'cursor',
+    'gemini-cli',
+    'opencode',
+    'kimi-code',
+    'qwen-code',
+    'qoder',
+    'qoder-cn',
+    'lingma',
+    'trae',
+    'codebuddy',
+    'comate',
+    'codegeex',
+    'iflycode',
+    'github-copilot',
+    'github-copilot-cli',
+    'windsurf',
+    'cline',
+    'roo-code',
+    'kilo-code',
+    'continue',
+    'aider',
+    'goose',
+    'openhands',
+    'kiro',
+    'amazon-q',
+    'augment-code',
+    'auggie',
+    'devin',
+    'devin-desktop',
+    'jetbrains-ai',
+    'jetbrains-air',
+    'junie',
+    'zed',
+    'warp',
+    'tabnine',
+    'replit-agent',
+    'factory-droid',
+    'mistral-vibe',
+    'pi',
+    'antigravity',
+    'hermes-agent',
+    'swe-agent',
+    'mini-swe-agent',
+    'open-interpreter',
+    'other',
+    'unknown',
+)
 AGENT_LABEL = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9 ._:/+\-]{0,95}", re.ASCII)
+# Only recognize this explicit family of aliases. Do not strip arbitrary model suffixes:
+# dates, preview names, fine-tunes and other providers may encode distinct models there.
+GPT_VARIANT = re.compile(
+    r"(?:openai[/:])?(?:gpt[ _-]?)?(\d+(?:\.\d+)+)[ _-]+"
+    r"(astra|sol|terra|luna)(?:[ _-]*(?:none|minimal|low|medium|high|xhigh|max|ultra))?"
+)
+
+
+def model_ranking_name(value):
+    """Group known spelling/effort aliases without changing submitted provenance."""
+    label = " ".join(value.lower().split())
+    match = GPT_VARIANT.fullmatch(label)
+    return f"gpt-{match[1]}-{match[2]}" if match else label
 
 
 def agent_metadata(value):
@@ -421,7 +483,10 @@ class Desk:
                 AND (model != 'unknown' OR harness != 'unknown')
         """, (now,)).fetchall()
         def ranking(column):
-            counts = Counter(row[column] for row in winners if row[column] != "unknown")
+            counts = Counter(
+                model_ranking_name(row[column]) if column == 0 else row[column]
+                for row in winners if row[column] != "unknown"
+            )
             return [{"name": name, "accepted": count} for name, count in
                     sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))]
         return {"models": ranking(0), "harnesses": ranking(1), "proofs": len(winners)}

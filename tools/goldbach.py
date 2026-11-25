@@ -13,6 +13,57 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+HARNESS_NAMES = (
+    'codex',
+    'claude-code',
+    'cursor',
+    'gemini-cli',
+    'opencode',
+    'kimi-code',
+    'qwen-code',
+    'qoder',
+    'qoder-cn',
+    'lingma',
+    'trae',
+    'codebuddy',
+    'comate',
+    'codegeex',
+    'iflycode',
+    'github-copilot',
+    'github-copilot-cli',
+    'windsurf',
+    'cline',
+    'roo-code',
+    'kilo-code',
+    'continue',
+    'aider',
+    'goose',
+    'openhands',
+    'kiro',
+    'amazon-q',
+    'augment-code',
+    'auggie',
+    'devin',
+    'devin-desktop',
+    'jetbrains-ai',
+    'jetbrains-air',
+    'junie',
+    'zed',
+    'warp',
+    'tabnine',
+    'replit-agent',
+    'factory-droid',
+    'mistral-vibe',
+    'pi',
+    'antigravity',
+    'hermes-agent',
+    'swe-agent',
+    'mini-swe-agent',
+    'open-interpreter',
+    'other',
+    'unknown',
+)
+
 REPO = "CGandGameEngineLearner/goldbach-proofs"
 SITE = "https://www.movan.tech/goldbach"
 GAP_ID = re.compile(r"L-[a-z0-9]+(?:-[a-z0-9]+)*")
@@ -225,7 +276,7 @@ def main():
     submission.add_argument("pr", type=int)
     submission.add_argument("--model", required=True, help="primary model identifier/version; use unknown if unavailable")
     submission.add_argument("--harness", required=True,
-                            choices=("codex", "claude-code", "cursor", "gemini-cli", "opencode", "other", "unknown"))
+                            choices=HARNESS_NAMES)
     submission.add_argument("--harness-version", default="unknown", help="tool version, when known")
     args = parser.parse_args()
     git_dir = Path(command("git", "rev-parse", "--absolute-git-dir"))

@@ -627,10 +627,59 @@ function updateRankingTimes() {
   }
 }
 
+const harnessLabels = {
+  "codex": "Codex",
+  "claude-code": "Claude Code",
+  "cursor": "Cursor",
+  "gemini-cli": "Gemini CLI",
+  "opencode": "OpenCode",
+  "kimi-code": "Kimi Code",
+  "qwen-code": "Qwen Code",
+  "qoder": "Qoder",
+  "qoder-cn": "Qoder CN",
+  "lingma": "通义灵码 / Lingma",
+  "trae": "TRAE",
+  "codebuddy": "CodeBuddy",
+  "comate": "Baidu Comate",
+  "codegeex": "CodeGeeX",
+  "iflycode": "iFlyCode",
+  "github-copilot": "GitHub Copilot",
+  "github-copilot-cli": "GitHub Copilot CLI",
+  "windsurf": "Windsurf",
+  "cline": "Cline",
+  "roo-code": "Roo Code",
+  "kilo-code": "Kilo Code",
+  "continue": "Continue",
+  "aider": "Aider",
+  "goose": "Goose",
+  "openhands": "OpenHands",
+  "kiro": "Kiro",
+  "amazon-q": "Amazon Q Developer",
+  "augment-code": "Augment Code",
+  "auggie": "Auggie",
+  "devin": "Devin",
+  "devin-desktop": "Devin Desktop",
+  "jetbrains-ai": "JetBrains AI Assistant",
+  "jetbrains-air": "JetBrains Air",
+  "junie": "Junie",
+  "zed": "Zed",
+  "warp": "Warp",
+  "tabnine": "Tabnine",
+  "replit-agent": "Replit Agent",
+  "factory-droid": "Factory Droid",
+  "mistral-vibe": "Mistral Vibe",
+  "pi": "Pi",
+  "antigravity": "Google Antigravity",
+  "hermes-agent": "Hermes Agent",
+  "swe-agent": "SWE-agent",
+  "mini-swe-agent": "mini-SWE-agent",
+  "open-interpreter": "Open Interpreter"
+};
+
 function agentName(name) {
   if (!name || name === 'unknown') return lang === 'zh' ? '未记录／未知' : 'Unknown / unrecorded';
-  const tools = {codex: 'Codex', 'claude-code': 'Claude Code', cursor: 'Cursor', 'gemini-cli': 'Gemini CLI', opencode: 'OpenCode', other: lang === 'zh' ? '其他工具' : 'Other tools'};
-  return tools[name] || name;
+  if (name === 'other') return lang === 'zh' ? '其他工具' : 'Other tools';
+  return Object.hasOwn(harnessLabels, name) ? harnessLabels[name] : name;
 }
 
 const agentBrandRules = [
