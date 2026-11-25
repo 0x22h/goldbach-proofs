@@ -63,6 +63,9 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-doubling-tilt": "GoldbachPacket.doublingTilt",
+              "L-goldbach-packet-exponential-moment": "GoldbachPacket.exponentialMoment",
+              "L-goldbach-packet-upper-tail-half": "GoldbachPacket.upperTail",
               "L-goldbach-packet-cap-comparison": "GoldbachBudget.capComparison",
               "L-goldbach-packet-energy-from-lags": "GoldbachBudget.energyFromLags",
               "L-goldbach-packet-from-capped-energy": "GoldbachBudget.packetFromCapped",
