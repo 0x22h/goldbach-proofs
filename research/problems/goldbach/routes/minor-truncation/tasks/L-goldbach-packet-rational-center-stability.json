@@ -1,0 +1,21 @@
+{
+  "id": "L-goldbach-packet-rational-center-stability",
+  "statement": "let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); ∃ N : ℕ, ∀ n ≥ N, ∀ x y : ℝ, |x-y| ≤ (Q n:ℝ)^2/(n:ℝ) → (1:ℝ)/2 < K n x → (1:ℝ)/3 < K n y",
+  "plain_statement": {
+    "zh": "共振峰在有理中心邻域保持可检测",
+    "en": "Detect resonances from a nearby rational center"
+  },
+  "brief": {
+    "zh": "对余弦和取 Lipschitz 上界；最大频率 2ᴸ 约为 √n。尺度 Q²/n 上的变化最终小于 1/6。该结论允许在有限分母的中心处做离散分析。",
+    "en": "Bound the cosine derivative by its frequency. The top frequency is of order √n, so the variation at scale Q²/n eventually falls below 1/6; this makes rational-center analysis possible."
+  },
+  "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+  "program": "correlation",
+  "parallel": true,
+  "depends_on": [],
+  "file": "lean/PEqualNP/Outside/L_goldbach_packet_rational_center_stability.lean",
+  "module": "PEqualNP.Outside.L_goldbach_packet_rational_center_stability",
+  "imports": [],
+  "track": "minor-truncation",
+  "role": "lemma"
+}

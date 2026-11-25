@@ -1538,7 +1538,10 @@ theorem shellFromModel (slow : Bool)
     have hp := Nat.totient_pos.mpr hq'
     apply continuous_finsetSum
     intro a _
-    apply Continuous.div <;> first | fun_prop | intro t; positivity
+    have den : Continuous (fun t : ℝ => (Nat.totient q:ℝ)^2 *
+        (1+((n:ℝ)*(t-(a:ℝ)/(q:ℝ)))^2)) := by fun_prop
+    exact (continuous_const : Continuous (fun _ : ℝ => 4*(n:ℝ)^2)).div den
+      (fun t => ne_of_gt (mul_pos (by positivity) (by positivity)))
   have hx : Continuous (excess n) := continuous_const.max ((continuousDensity n).sub hc)
   have hsum := intervalIntegral.integral_add (onRegion hs hc) (onRegion hw hx)
   have ma : regionMass n s ≤ integralOn s (peaks n) + integralOn w (excess n) := by
