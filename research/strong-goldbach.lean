@@ -1954,7 +1954,7 @@ private theorem totientSquare (q : ℕ) :
     · simp
     obtain ⟨p,hp,m,rfl⟩ := Nat.exists_prime_and_dvd h1
     have hp2 := hp.two_le
-    have hm : 0 < m := by by_contra! h; have : m=0 := by omega; simp [this] at h0
+    have hm : 0 < m := Nat.pos_of_ne_zero (fun hz => h0 (by simp [hz]))
     have lt : m < p*m := by nlinarith [Nat.mul_le_mul_right m hp2]
     obtain ⟨all,odd⟩ := ih m lt
     have lift (f c : ℕ) (eq : (p*m).totient = f*m.totient) (hf : p ≤ f^2)
@@ -2119,9 +2119,9 @@ theorem farTails (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n ≥ N,
   linarith only [hh]
 
 
-private theorem packetVariation (m : ℕ) (hm : 0<m) (x y : ℝ) :
+private theorem packetVariation (m : ℕ) (hm : 0< m) (x y : ℝ) :
     |packet m x/(m:ℝ)-packet m y/(m:ℝ)| ≤ 2*Real.pi*(2:ℝ)^m*|x-y| := by
-  have mr : (0:ℝ)<m := by exact_mod_cast hm
+  have mr : (0:ℝ)< m := by exact_mod_cast hm
   let C := 2*Real.pi*(2:ℝ)^m*|x-y|
   rw [← sub_div,abs_div,abs_of_pos mr]
   apply (div_le_iff₀ mr).mpr
@@ -2141,7 +2141,7 @@ private theorem packetVariation (m : ℕ) (hm : 0<m) (x y : ℝ) :
       exact Finset.mem_range.mp hj
     _ = _ := by simp [C]; ring
 
-private theorem exponentialRoom (m : ℕ) (hm : 128≤m) :
+private theorem exponentialRoom (m : ℕ) (hm : 128≤ m) :
     48*(2*(m:ℝ)+3)^4 ≤ (2:ℝ)^m := by
   obtain ⟨k,rfl⟩ := Nat.exists_eq_add_of_le hm
   induction k with
@@ -2165,7 +2165,7 @@ theorem rationalCenterStability : ∃ N : ℕ, ∀ n ≥ N, ∀ x y : ℝ,
   let m := length n
   have hk : 256 ≤ k := Nat.le_log_of_pow_le (by decide) hn
   have hlen : m = k/2 := by dsimp [m,k,length]; omega
-  have hm : 128≤m := by omega
+  have hm : 128≤ m := by omega
   have hn' : 0<n := lt_of_lt_of_le (by positivity : 0<2^256) hn
   have nr : (0:ℝ)<n := by exact_mod_cast hn'
   have top := Nat.lt_pow_succ_log_self (by decide : 1<2) n
@@ -2200,6 +2200,221 @@ theorem rationalCenterStability : ∃ N : ℕ, ∀ n ≥ N, ∀ x y : ℝ,
   change (1:ℝ)/2 < packet m x/(m:ℝ) at hpeak
   change (1:ℝ)/3 < packet m y/(m:ℝ)
   linarith only [le_abs_self (packet m x/(m:ℝ)-packet m y/(m:ℝ)),bound,hpeak]
+
+
+private theorem profileContinuous (n q : ℕ) (hq : 0<q) (c : ℝ) : Continuous (profile n q c) := by
+  have hf : 0 < (q.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr hq
+  unfold profile
+  fun_prop (disch := intro t; positivity)
+
+private theorem profileNonneg (n q : ℕ) (c t : ℝ) : 0 ≤ profile n q c t := by unfold profile; positivity
+
+private theorem onSubset {s v : Set ℝ} {f : ℝ → ℝ} (hs : MeasurableSet s) (hv : MeasurableSet v)
+    (h : s ⊆ v) (hc : Continuous f) (hpos : ∀ t, 0≤f t) : integralOn s f ≤ integralOn v f := by
+  apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hs hc) (onRegion hv hc)
+  intro t _
+  by_cases ht : t ∈ s
+  · simp [ht,h ht]
+  · by_cases ht' : t ∈ v <;> simp [ht,ht',hpos]
+
+private theorem onFiniteSum {ι : Type*} (T : Finset ι) {s : Set ℝ} (hs : MeasurableSet s)
+    (f : ι → ℝ → ℝ) (hc : ∀ i ∈ T, Continuous (f i)) :
+    integralOn s (fun t => ∑ i ∈ T, f i t) = ∑ i ∈ T, integralOn s (f i) := by
+  have eq : s.indicator (fun t => ∑ i ∈ T, f i t) = fun t => ∑ i ∈ T, s.indicator (f i) t := by
+    funext t; by_cases h : t ∈ s <;> simp [h]
+  unfold integralOn
+  rw [eq, intervalIntegral.integral_finsetSum (fun i hi => onRegion hs (hc i hi))]
+
+private abbrev detected (n q a : ℕ) := (1:ℝ)/3 < packet (length n) ((a:ℝ)/(q:ℝ))/(length n:ℝ)
+private def centerWeight (n q : ℕ) :=
+  min (1:ℝ) ((q:ℝ)/(gridQ n:ℝ)) *
+    (((Finset.range (q+1)).filter (fun a => Nat.Coprime a q ∧ detected n q a)).card:ℝ)/(q.totient:ℝ)^2
+
+private theorem oneCenterMass (n q a : ℕ) (hn : 0<n) (hq : 0<q) (hQ : 0<gridQ n) (ha : a≤q) :
+    integralOn (resonant n) (profile n q ((a:ℝ)/(q:ℝ))) ≤
+      8*Real.pi*(n:ℝ)*min 1 ((q:ℝ)/(gridQ n:ℝ))/(q.totient:ℝ)^2 := by
+  let c := (a:ℝ)/(q:ℝ)
+  have hc := profileContinuous n q hq c
+  have hf : 0 < (q.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr hq
+  have nr : 0 < (n:ℝ) := by exact_mod_cast hn
+  have qr : 0 < (gridQ n:ℝ) := by exact_mod_cast hQ
+  by_cases small : q ≤ gridQ n
+  · let r := (gridQ n:ℝ)/((q:ℝ)*(n:ℝ))
+    have hr : 0<r := by dsimp [r]; positivity
+    have hs : MeasurableSet {t : ℝ | r < |t-c|} :=
+      (isOpen_lt continuous_const (continuous_abs.comp (continuous_id.sub continuous_const))).measurableSet
+    have sub : resonant n ⊆ {t : ℝ | r < |t-c|} :=
+      fun _ h => denominatorExclusion hn hq small ha h.1
+    apply (onSubset (measurableMask n) hs sub hc (profileNonneg n q c)).trans
+    apply (peakOutside n q hq c r hr).trans_eq
+    rw [min_eq_right ((div_le_one qr).mpr (by exact_mod_cast small))]
+    dsimp [r]; field_simp <;> ring
+  · have ht : 1 ≤ (q:ℝ)/(gridQ n:ℝ) := (one_le_div qr).mpr (by exact_mod_cast (by omega : gridQ n ≤ q))
+    rw [min_eq_left ht,mul_one]
+    let r := 1/(n:ℝ)
+    have hr : 0<r := by dsimp [r]; positivity
+    have id (t : ℝ) : profile n q c t = (4/(q.totient:ℝ)^2)*lorentz r c t := by
+      dsimp [profile,lorentz,r]; field_simp <;> ring
+    calc
+      _ ≤ ∫ t in (0:ℝ)..1, (4/(q.totient:ℝ)^2)*lorentz r c t := by
+        apply intervalIntegral.integral_mono_on (by norm_num) (onRegion (measurableMask n) hc)
+          (((lorentzContinuous hr c).intervalIntegrable ..).const_mul _)
+        intro t _
+        by_cases h : t ∈ resonant n
+        · rw [Set.indicator_of_mem h,id]
+        · rw [Set.indicator_of_notMem h]; unfold lorentz; positivity
+      _ = (4/(q.totient:ℝ)^2)*_ := intervalIntegral.integral_const_mul ..
+      _ ≤ (4/(q.totient:ℝ)^2)*(Real.pi/r) := mul_le_mul_of_nonneg_left (lorentzIntegral hr _) (by positivity)
+      _ ≤ _ := by dsimp [r]; field_simp <;> nlinarith only [mul_pos Real.pi_pos nr]
+
+/-- Count all active rational centers; away from a center only its unconditional tail is charged. -/
+theorem modelFromCenters
+    (counts : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ Finset.Icc 1 ((gridQ n)^2), centerWeight n q) ≤ ε) :
+    ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N, integralOn (resonant n) (peaks n) ≤ ε*(n:ℝ) := by
+  intro ε hε
+  obtain ⟨C,hC⟩ := counts (ε/(16*Real.pi)) (by positivity)
+  obtain ⟨F,hF⟩ := farTails (ε/2) (by positivity)
+  obtain ⟨K,hK⟩ := rationalCenterStability
+  refine ⟨max 1 (max K (max F C)), ?_⟩
+  intro n hn
+  have hn' : 0<n := by omega
+  have g : 1 ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by norm_num; omega)
+  have hQ : 0<gridQ n := by unfold gridQ; positivity
+  let D := Finset.Icc 1 ((gridQ n)^2)
+  let P := 8*Real.pi*(n:ℝ)
+  let V := fun q : ℕ => P*min 1 ((q:ℝ)/(gridQ n:ℝ))/(q.totient:ℝ)^2
+  have bound (q : ℕ) (hq : 0<q) (a : ℕ) (ha : a≤q) :
+      integralOn (resonant n) (profile n q ((a:ℝ)/(q:ℝ))) ≤ farPeak n q a + (if detected n q a then V q else 0) := by
+    let c := (a:ℝ)/(q:ℝ)
+    let r := (gridQ n:ℝ)^2/(n:ℝ)
+    by_cases h : detected n q a
+    · rw [if_pos h]
+      apply (oneCenterMass n q a hn' hq hQ ha).trans
+      apply le_add_of_nonneg_left
+      apply intervalIntegral.integral_nonneg (by norm_num)
+      intro t _
+      change 0 ≤ ({t : ℝ | r < |t-c|}.indicator (profile n q c)) t
+      by_cases ht : t ∈ {t : ℝ | r < |t-c|}
+      · rw [Set.indicator_of_mem ht]; exact profileNonneg n q c t
+      · rw [Set.indicator_of_notMem ht]
+    · rw [if_neg h,add_zero]
+      have sub : resonant n ⊆ {t : ℝ | r < |t-c|} := by
+        intro t ht
+        change r < |t-c|
+        by_contra! hh
+        exact h (hK n (by omega) t c hh ht.2)
+      have hs : MeasurableSet {t : ℝ | r < |t-c|} :=
+        (isOpen_lt continuous_const (continuous_abs.comp (continuous_id.sub continuous_const))).measurableSet
+      exact onSubset (measurableMask n) hs sub (profileContinuous n q hq c) (profileNonneg n q c)
+  have accumulate (q : ℕ) (hq : q ∈ D) :
+      integralOn (resonant n) (fun t => ∑ a ∈ numerators q, profile n q ((a:ℝ)/(q:ℝ)) t)
+      ≤ (∑ a ∈ numerators q, farPeak n q a) + P*centerWeight n q := by
+    have pos := (Finset.mem_Icc.mp hq).1
+    rw [onFiniteSum (numerators q) (measurableMask n) _ (fun a _ => profileContinuous n q pos _)]
+    apply (Finset.sum_le_sum (fun a (ha : a ∈ numerators q) => bound q pos a
+      (by have h := Finset.mem_range.mp (Finset.mem_filter.mp ha).1; omega))).trans_eq
+    rw [Finset.sum_add_distrib,← Finset.sum_filter]
+    congr 1
+    simp only [numerators,Finset.filter_filter,Finset.sum_const,nsmul_eq_mul,centerWeight,V]
+    ring
+  calc
+    _ = ∑ q ∈ D, integralOn (resonant n) (fun t => ∑ a ∈ numerators q, profile n q ((a:ℝ)/(q:ℝ)) t) := by
+      apply onFiniteSum
+      intro q hq
+      apply continuous_finsetSum
+      intro a _
+      exact profileContinuous n q (Finset.mem_Icc.mp hq).1 _
+    _ ≤ ∑ q ∈ D, ((∑ a ∈ numerators q, farPeak n q a) + P*centerWeight n q) := Finset.sum_le_sum accumulate
+    _ = (∑ q ∈ D, ∑ a ∈ numerators q, farPeak n q a) + P*(∑ q ∈ D, centerWeight n q) := by rw [Finset.sum_add_distrib,Finset.mul_sum]
+    _ ≤ ε/2*(n:ℝ)+P*(ε/(16*Real.pi)) := add_le_add (hF n (by omega))
+      (mul_le_mul_of_nonneg_left (hC n (by omega)) (by dsimp [P]; positivity))
+    _ = _ := by dsimp [P]; field_simp <;> ring
+
+
+private abbrev lowOrderTest (n q : ℕ) := q % 2 = 1 ∧
+  ((Finset.Icc 1 ((Nat.log 2 (gridQ n)+1)^2)).filter (fun j => q ∣ 2^j-1)).Nonempty
+
+theorem combineCenterCounts
+    (slow : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => lowOrderTest n q), centerWeight n q) ≤ ε)
+    (rest : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => ¬lowOrderTest n q), centerWeight n q) ≤ ε) :
+    ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ Finset.Icc 1 ((gridQ n)^2), centerWeight n q) ≤ ε := by
+  intro ε hε
+  obtain ⟨A,hA⟩ := slow (ε/2) (by positivity)
+  obtain ⟨B,hB⟩ := rest (ε/2) (by positivity)
+  refine ⟨max A B, ?_⟩
+  intro n hn
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.Icc 1 ((gridQ n)^2)) (lowOrderTest n)]
+  linarith only [hA n (by omega),hB n (by omega)]
+
+theorem modelRegionFromCounts (slow : Bool)
+    (counts : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ Finset.Icc 1 ((gridQ n)^2), centerWeight n q) ≤ ε) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → integralOn (shellRegion n slow) (peaks n) ≤ (n:ℝ)/4608 := by
+  obtain ⟨N,hN⟩ := modelFromCenters counts (1/4608) (by norm_num)
+  refine ⟨N, ?_⟩
+  intro n hn _
+  have hm := (measurableMask n).inter (measurableWindows n (fun _ => True))
+  have ho := measurableWindows n (shortOrder n)
+  have hs : MeasurableSet (shellRegion n slow) := by cases slow; exact hm.diff ho; exact hm.inter ho
+  have sub : shellRegion n slow ⊆ resonant n := by cases slow <;> exact fun _ ht => ht.1.1
+  have hc : Continuous (peaks n) := by
+    apply continuous_finsetSum
+    intro q hq
+    apply continuous_finsetSum
+    intro a _
+    exact profileContinuous n q (Finset.mem_Icc.mp hq).1 _
+  have pos (t : ℝ) : 0 ≤ peaks n t := Finset.sum_nonneg fun q _ => Finset.sum_nonneg fun a _ => profileNonneg n q _ t
+  apply (onSubset hs (measurableMask n) sub hc pos).trans
+  linarith only [hN n hn]
+
+
+private abbrev smoothTest (n q : ℕ) :=
+  ∀ p ∈ q.primeFactors, p ≤ (1+Nat.log 2 (gridQ n))^8
+private def denominatorWeight (n q : ℕ) := min (1:ℝ) ((q:ℝ)/(gridQ n:ℝ))/(q.totient:ℝ)
+
+theorem shortCentersFromModuli
+    (smooth : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => smoothTest n q), denominatorWeight n q) ≤ ε)
+    (large : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => lowOrderTest n q ∧ ¬smoothTest n q), denominatorWeight n q) ≤ ε) :
+    ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => lowOrderTest n q), centerWeight n q) ≤ ε := by
+  intro ε hε
+  obtain ⟨A,hA⟩ := smooth (ε/4) (by positivity)
+  obtain ⟨B,hB⟩ := large (ε/4) (by positivity)
+  refine ⟨max A B, ?_⟩
+  intro n hn
+  let D := Finset.Icc 1 ((gridQ n)^2)
+  let U := D.filter (fun q => lowOrderTest n q)
+  have nonneg (q : ℕ) : 0≤denominatorWeight n q := by unfold denominatorWeight; positivity
+  have bound (q : ℕ) (hq : q∈U) : centerWeight n q ≤ 2*denominatorWeight n q := by
+    have hq' : 0<q := (Finset.mem_Icc.mp (Finset.mem_filter.mp hq).1).1
+    have hf : 0 < (q.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr hq'
+    let good := (Finset.range (q+1)).filter (fun a => Nat.Coprime a q ∧ detected n q a)
+    have sub : good ⊆ numerators q := by
+      intro a h; exact Finset.mem_filter.mpr ⟨(Finset.mem_filter.mp h).1,(Finset.mem_filter.mp h).2.1⟩
+    have card : (good.card:ℝ) ≤ 2*(q.totient:ℝ) := by exact_mod_cast (Finset.card_le_card sub).trans (countNumerators q hq')
+    let w := min (1:ℝ) ((q:ℝ)/(gridQ n:ℝ))
+    have pos : 0≤w := by dsimp [w]; positivity
+    change w*(good.card:ℝ)/(q.totient:ℝ)^2 ≤ 2*(w/(q.totient:ℝ))
+    apply ((div_le_div_iff_of_pos_right (by positivity)).mpr (mul_le_mul_of_nonneg_left card pos)).trans_eq
+    field_simp <;> ring
+  have sub : U.filter (smoothTest n) ⊆ D.filter (smoothTest n) := by
+    intro q h
+    exact Finset.mem_filter.mpr ⟨(Finset.mem_filter.mp (Finset.mem_filter.mp h).1).1,(Finset.mem_filter.mp h).2⟩
+  have sm : (∑ q ∈ U.filter (smoothTest n), denominatorWeight n q) ≤ ε/4 :=
+    (Finset.sum_le_sum_of_subset_of_nonneg sub (fun q _ _ => nonneg q)).trans (hA n (by omega))
+  have lg : (∑ q ∈ U.filter (fun q => ¬smoothTest n q), denominatorWeight n q) ≤ ε/4 := by
+    simpa only [U,D,Finset.filter_filter] using hB n (by omega)
+  have eq := Finset.sum_filter_add_sum_filter_not U (smoothTest n) (denominatorWeight n)
+  calc
+    _ ≤ ∑ q ∈ U, 2*denominatorWeight n q := Finset.sum_le_sum bound
+    _ = 2*∑ q ∈ U, denominatorWeight n q := (Finset.mul_sum ..).symm
+    _ ≤ ε := by linarith only [sm,lg,eq]
 
 end
 end GoldbachPacket
