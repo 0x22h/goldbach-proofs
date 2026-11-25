@@ -6,8 +6,8 @@
     "en": "Detect resonances from a nearby rational center"
   },
   "brief": {
-    "zh": "对余弦和取 Lipschitz 上界；最大频率 2ᴸ 约为 √n。尺度 Q²/n 上的变化最终小于 1/6。该结论允许在有限分母的中心处做离散分析。",
-    "en": "Bound the cosine derivative by its frequency. The top frequency is of order √n, so the variation at scale Q²/n eventually falls below 1/6; this makes rational-center analysis possible."
+    "zh": "对余弦和逐项应用 Lipschitz 界，最大频率为 2ᴸ。n≥2²⁵⁶ 时 Q²/n 邻域内的变化至多 1/6，连续共振可在有理中心检测。",
+    "en": "Bound the cosine variation term by term at top frequency 2ᴸ. For n≥2²⁵⁶ the change across Q²/n is at most 1/6, allowing detection at the rational center."
   },
   "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
   "program": "correlation",

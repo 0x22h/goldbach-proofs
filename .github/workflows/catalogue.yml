@@ -70,6 +70,7 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-short-period-large-prime-weight": "GoldbachPacket.shortPeriodLargePrimeWeight",
               "L-goldbach-packet-model-from-center-counts": "(fun a b => GoldbachPacket.modelFromCenters (GoldbachPacket.combineCenterCounts a b))",
               "L-goldbach-packet-short-order-peak-overlap-from-full": "GoldbachPacket.modelRegionFromFull true",
               "L-goldbach-packet-remaining-peak-overlap-from-full": "GoldbachPacket.modelRegionFromFull false",
@@ -126,6 +127,10 @@ jobs:
           lines.append(f"example : ({levels}) → ({spike}) := by "
                        "rintro ⟨N, h⟩; apply GoldbachPacket.spikesFromLateLevels; "
                        "exact ⟨N, fun n hn he j _ _ => h n hn he j⟩")
+          smooth = frozen["L-goldbach-packet-smooth-moduli-weight"]
+          short = frozen["L-goldbach-packet-short-order-center-count"]
+          lines.append(f"example : ({smooth}) → ({short}) := fun h => "
+                       "GoldbachPacket.shortCentersFromModuli h GoldbachPacket.shortPeriodLargePrimeWeight")
           (Path(os.environ["RUNNER_TEMP"]) / "Catalogue.lean").write_text("\n".join(lines) + "\n")
           print(f"Type-checking {len(gaps)} propositions")
           PY

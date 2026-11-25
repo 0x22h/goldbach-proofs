@@ -14333,8 +14333,8 @@
         "en": "Detect resonances from a nearby rational center"
       },
       "brief": {
-        "zh": "对余弦和取 Lipschitz 上界；最大频率 2ᴸ 约为 √n。尺度 Q²/n 上的变化最终小于 1/6。该结论允许在有限分母的中心处做离散分析。",
-        "en": "Bound the cosine derivative by its frequency. The top frequency is of order √n, so the variation at scale Q²/n eventually falls below 1/6; this makes rational-center analysis possible."
+        "zh": "对余弦和逐项应用 Lipschitz 界，最大频率为 2ᴸ。n≥2²⁵⁶ 时 Q²/n 邻域内的变化至多 1/6，连续共振可在有理中心检测。",
+        "en": "Bound the cosine variation term by term at top frequency 2ᴸ. For n≥2²⁵⁶ the change across Q²/n is at most 1/6, allowing detection at the rational center."
       },
       "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
       "program": "correlation",
@@ -14377,8 +14377,8 @@
         "en": "Cut all rational-peak tails simultaneously at sublinear cost"
       },
       "brief": {
-        "zh": "以共同半径 Q²/n 截断每一个中心。逐峰积分再按 φ(q) 个分子求和；需要对 q≤Q² 的 1/φ(q) 总和给出足够节省。q=1 时包含两个区间端点。",
-        "en": "Truncate each peak at the common radius Q²/n. Integrate its tail, then sum the reciprocal-totient cost. For q=1 the two interval endpoints both occur."
+        "zh": "共同半径为 Q²/n。用洛伦兹尾积分、每个分母至多 2φ(q) 个分子，以及 ∑_{q≤Q²}1/φ(q)≤4Q，得到全体尾部至多 64πn/Q。包括 q=1 的两个端点。",
+        "en": "At common radius Q²/n, Lorentz integration, at most 2φ(q) centers and a reciprocal-totient sum ≤4Q give total leakage ≤64πn/Q. Both endpoints for q=1 are included."
       },
       "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
       "program": "correlation",
@@ -14707,8 +14707,8 @@
         "en": "Vanishing weight of short-period moduli with a large prime factor"
       },
       "brief": {
-        "zh": "若大素数 p 整除这样的 q，则 p 整除某个 2ʲ−1，且 j≤(1+log₂ Q)²。可先限制这些 p 的倒数和，再对余因子求和；需处理素数重数和 φ 权重。",
-        "en": "Each such large prime divides 2ʲ−1 for some j≤(1+log₂ Q)². Bound the reciprocal mass of these primes, then sum the cofactors, accounting for multiplicity and totient weights."
+        "zh": "每个大素因子 p 必整除某个 2ʲ−1。对 j≤H 的所有候选大素数按重数求和，1/(p−1) 的总价至多 H²/Y。用 φ 的超乘性向余因子收费，再以 (⌊log₂ X⌋+2)² 控制余因子倒欧拉函数和。",
+        "en": "Every large prime factor divides some 2ʲ−1. Summing even with period multiplicities costs ≤H²/Y in reciprocal (p−1) weight. Charge the cofactor by supermultiplicativity of φ and use the bound (floor(log₂ X)+2)² for its reciprocal-totient sum."
       },
       "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
       "program": "correlation",

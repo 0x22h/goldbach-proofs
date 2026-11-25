@@ -6,8 +6,8 @@
     "en": "Vanishing weight of short-period moduli with a large prime factor"
   },
   "brief": {
-    "zh": "若大素数 p 整除这样的 q，则 p 整除某个 2ʲ−1，且 j≤(1+log₂ Q)²。可先限制这些 p 的倒数和，再对余因子求和；需处理素数重数和 φ 权重。",
-    "en": "Each such large prime divides 2ʲ−1 for some j≤(1+log₂ Q)². Bound the reciprocal mass of these primes, then sum the cofactors, accounting for multiplicity and totient weights."
+    "zh": "每个大素因子 p 必整除某个 2ʲ−1。对 j≤H 的所有候选大素数按重数求和，1/(p−1) 的总价至多 H²/Y。用 φ 的超乘性向余因子收费，再以 (⌊log₂ X⌋+2)² 控制余因子倒欧拉函数和。",
+    "en": "Every large prime factor divides some 2ʲ−1. Summing even with period multiplicities costs ≤H²/Y in reciprocal (p−1) weight. Charge the cofactor by supermultiplicativity of φ and use the bound (floor(log₂ X)+2)² for its reciprocal-totient sum."
   },
   "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
   "program": "correlation",

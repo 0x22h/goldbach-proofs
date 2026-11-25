@@ -2465,7 +2465,9 @@ private theorem fractionProduct (S : Finset ℕ) (hs : ∀ p ∈ S, 2≤p) :
   | insert a S hmax ih =>
     have ha := hs a (Finset.mem_insert_self ..)
     have old (p : ℕ) (hp : p∈S) := hs p (Finset.mem_insert_of_mem hp)
-    have ha' : 0 < (a:ℝ)-1 := by have : (2:ℝ) ≤ a := by exact_mod_cast ha; linarith
+    have ha' : 0 < (a:ℝ)-1 := by
+      have h : (2:ℝ) ≤ a := by exact_mod_cast ha
+      linarith
     have notMem : a ∉ S := fun h => (lt_irrefl a) (hmax a h)
     have sub : S ⊆ Finset.Ico 2 a := fun p hp => Finset.mem_Ico.mpr ⟨old p hp,hmax p hp⟩
     have count := Finset.card_le_card sub
@@ -2494,8 +2496,11 @@ private theorem totientLogLower (q : ℕ) (hq : 0<q) :
       have h : (2:ℝ)≤p := by exact_mod_cast hs p hp
       linarith)
     apply (div_eq_div_iff hf.ne' pos.ne').mpr
-    have formula : (q.totient:ℝ)*(∏ p ∈ S, (p:ℝ)) =
-        (q:ℝ)*∏ p ∈ S, ((p-1:ℕ):ℝ) := by exact_mod_cast Nat.totient_mul_prod_primeFactors q
+    have formula := congrArg (fun k : ℕ => (k:ℝ)) (Nat.totient_mul_prod_primeFactors q)
+    simp only [Nat.cast_mul,Nat.cast_prod] at formula
+    change (q:ℝ)*_ = _*(q.totient:ℝ)
+    rw [mul_comm _ (q.totient:ℝ)]
+    dsimp [S]
     rw [formula]
     congr 1
     apply Finset.prod_congr rfl
@@ -2518,7 +2523,7 @@ private theorem harmonicBlock (k : ℕ) :
           apply one_div_le_one_div_of_le (by positivity)
           push_cast; linarith [Nat.cast_nonneg (α := ℝ) j]
         _ = _ := by simp
-    push_cast
+    push_cast at block ⊢
     linarith only [ih,block]
 
 theorem reciprocalTotientLogBound (X : ℕ) (hX : 0<X) :
@@ -2533,7 +2538,7 @@ theorem reciprocalTotientLogBound (X : ℕ) (hX : 0<X) :
   have upper := (Nat.lt_pow_succ_log_self (by decide : 1<2) X).le
   have harm : (∑ m ∈ Finset.range X, 1/((m:ℝ)+1)) ≤ (k:ℝ)+2 := by
     apply (Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono upper) (fun m _ _ => by positivity)).trans
-    simpa [k,add_assoc] using harmonicBlock (k+1)
+    convert harmonicBlock (k+1) using 1 <;> push_cast <;> ring
   rw [idx,Finset.sum_map]
   calc
     _ ≤ ∑ j ∈ Finset.range X, ((k:ℝ)+1)*(1/((j:ℝ)+1)) := by
@@ -2547,10 +2552,136 @@ theorem reciprocalTotientLogBound (X : ℕ) (hX : 0<X) :
       rw [mul_one_div]
       apply (le_div_iff₀ (by positivity)).mpr
       push_cast at h
-      linarith only [h]
+      simpa only [one_div,div_eq_mul_inv,mul_comm] using h
     _ = ((k:ℝ)+1)*_ := (Finset.mul_sum ..).symm
     _ ≤ ((k:ℝ)+1)*((k:ℝ)+2) := mul_le_mul_of_nonneg_left harm (by positivity)
     _ ≤ _ := by dsimp [k]; nlinarith only [Nat.cast_nonneg (α := ℝ) (Nat.log 2 X)]
+
+
+private theorem chargeWitnesses {α β : Type*} [DecidableEq β]
+    (S : Finset β) (T : Finset α) (key : α → β) (w : β → ℝ) (v : α → ℝ)
+    (pos : ∀ a∈T, 0≤v a) (charge : ∀ b∈S, ∃ a∈T, key a=b ∧ w b≤v a) :
+    (∑ b ∈ S, w b) ≤ ∑ a ∈ T, v a := by
+  calc
+    _ ≤ ∑ b ∈ S, ∑ a ∈ T, if key a=b then v a else 0 := by
+      apply Finset.sum_le_sum
+      intro b hb
+      obtain ⟨a,ha,e,h⟩ := charge b hb
+      apply h.trans
+      simpa only [e,if_true] using Finset.single_le_sum
+        (s := T) (f := fun x => if key x=b then v x else 0)
+        (fun x hx => by split <;> first | exact pos x hx | exact le_rfl) ha
+    _ = ∑ a ∈ T, ∑ b ∈ S, if key a=b then v a else 0 := Finset.sum_comm
+    _ ≤ _ := by
+      apply Finset.sum_le_sum
+      intro a ha
+      by_cases h : key a ∈ S <;> simp [h,pos a ha]
+
+private theorem largePeriodWeightFinite (n : ℕ) :
+    (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => lowOrderTest n q ∧ ¬smoothTest n q),
+      denominatorWeight n q) ≤
+      (∑ m ∈ Finset.Icc 1 ((gridQ n)^2), 1/(m.totient:ℝ)) *
+        (((1+Nat.log 2 (gridQ n):ℕ):ℝ)^4 / ((1+Nat.log 2 (gridQ n):ℕ):ℝ)^8) := by
+  classical
+  let u := 1+Nat.log 2 (gridQ n)
+  let H := u^2
+  let Y := u^8
+  let X := (gridQ n)^2
+  let D := Finset.Icc 1 X
+  let J := Finset.Icc 1 H
+  let Ps := fun j : ℕ => (2^j-1:ℕ).primeFactors.filter (fun p => Y<p)
+  let T : Finset (Σ _j : ℕ, ℕ × ℕ) := J.sigma (fun j => Ps j ×ˢ D)
+  let S := D.filter (fun q => lowOrderTest n q ∧ ¬smoothTest n q)
+  let v := fun a : (Σ _j : ℕ, ℕ × ℕ) => (1/((a.2.1:ℝ)-1))*(1/(a.2.2.totient:ℝ))
+  let M := ∑ m ∈ D, 1/(m.totient:ℝ)
+  have vpos (a : Σ _j : ℕ, ℕ × ℕ) (ha : a∈T) : 0≤v a := by
+    have h := (Finset.mem_product.mp (Finset.mem_sigma.mp ha).2).1
+    have hp := (Nat.prime_of_mem_primeFactors (Finset.mem_filter.mp h).1).two_le
+    have hp' : (2:ℝ)≤a.2.1 := by exact_mod_cast hp
+    dsimp [v]; positivity
+  have witnesses (q : ℕ) (hq : q∈S) : ∃ a∈T, a.2.1*a.2.2=q ∧ denominatorWeight n q≤v a := by
+    obtain ⟨hd,hshort,hnsm⟩ := Finset.mem_filter.mp hq
+    change ¬∀ p ∈ q.primeFactors, p≤Y at hnsm
+    push_neg at hnsm
+    obtain ⟨p,hp,hY⟩ := hnsm
+    obtain ⟨j,hj⟩ := hshort.2
+    obtain ⟨hjrange,dvd⟩ := Finset.mem_filter.mp hj
+    have hj' : j ∈ J := by simpa only [J,H,u,Nat.add_comm 1] using hjrange
+    have pPrime := Nat.prime_of_mem_primeFactors hp
+    have dp := Nat.dvd_of_mem_primeFactors hp
+    obtain ⟨m,eq⟩ := dp
+    have qpos : 0<q := (Finset.mem_Icc.mp hd).1
+    have mpos : 0< m := Nat.pos_of_ne_zero (fun e => (Nat.ne_of_gt qpos) (by simp [eq,e]))
+    have mQ : m≤q := Nat.le_of_dvd qpos ⟨p,by simpa only [mul_comm] using eq⟩
+    have hpos : 0<(2^j-1:ℕ) := by
+      have two : 2≤2^j := by simpa using Nat.pow_le_pow_right (by decide : 0<2) (Finset.mem_Icc.mp hj').1
+      omega
+    have pm : p∈Ps j := Finset.mem_filter.mpr ⟨pPrime.mem_primeFactors ((Nat.dvd_of_mem_primeFactors hp).trans dvd) hpos.ne',hY⟩
+    refine ⟨⟨j,(p,m)⟩, Finset.mem_sigma.mpr ⟨hj', Finset.mem_product.mpr ⟨pm,Finset.mem_Icc.mpr ⟨mpos,mQ.trans (Finset.mem_Icc.mp hd).2⟩⟩⟩,eq.symm, ?_⟩
+    have phip : 0<(p.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr pPrime.pos
+    have phim : 0<(m.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr mpos
+    have phi : (p.totient:ℝ)*(m.totient:ℝ) ≤ (q.totient:ℝ) := by rw [eq]; exact_mod_cast Nat.totient_super_multiplicative p m
+    have phiq : 0<(q.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr qpos
+    have primeId : (p.totient:ℝ)=(p:ℝ)-1 := by
+      rw [Nat.totient_prime pPrime,Nat.cast_sub (by have := pPrime.two_le; omega),Nat.cast_one]
+    calc
+      _ ≤ 1/(q.totient:ℝ) := div_le_div_of_nonneg_right (min_le_left ..) phiq.le
+      _ ≤ 1/((p.totient:ℝ)*(m.totient:ℝ)) := one_div_le_one_div_of_le (mul_pos phip phim) phi
+      _ = _ := by dsimp [v]; rw [primeId]; ring
+  have eq : (∑ a ∈ T, v a) = M*(∑ j ∈ J, ∑ p ∈ Ps j, 1/((p:ℝ)-1)) := by
+    dsimp only [T]
+    rw [Finset.sum_sigma',Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro j hj
+    rw [Finset.sum_product,Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro p hp
+    dsimp only [v]
+    rw [← Finset.mul_sum,mul_comm]
+  have ub := periodPrimeBudget H Y (by dsimp [H,Y,u]; positivity)
+  have conv : (H:ℝ)^2/(Y:ℝ) = (u:ℝ)^4/(u:ℝ)^8 := by dsimp [H,Y]; push_cast; ring
+  rw [conv] at ub
+  apply (chargeWitnesses S T (fun a => a.2.1*a.2.2) (denominatorWeight n) v vpos witnesses).trans
+  rw [eq]
+  exact mul_le_mul_of_nonneg_left ub (Finset.sum_nonneg fun _ _ => by positivity)
+
+theorem shortPeriodLargePrimeWeight : ∀ ε : ℝ, 0<ε → ∃ N : ℕ, ∀ n ≥ N,
+    (∑ q ∈ (Finset.Icc 1 ((gridQ n)^2)).filter (fun q => lowOrderTest n q ∧ ¬smoothTest n q),
+      denominatorWeight n q) ≤ ε := by
+  intro ε hε
+  obtain ⟨M,hM⟩ := exists_nat_ge (16/ε)
+  refine ⟨2^(2^M), ?_⟩
+  intro n hn
+  let Q := gridQ n
+  let u := 1+Nat.log 2 Q
+  have hlog : 2^M ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by omega)
+  have hQ : 2^M ≤ Q := by dsimp [Q,gridQ]; nlinarith [Nat.le_mul_self (Nat.log 2 (n+2))]
+  have qpos : 0<Q := lt_of_lt_of_le (by positivity : 0<2^M) hQ
+  have hu : M ≤ u := by have h := Nat.le_log_of_pow_le (by decide : 1<2) hQ; dsimp [u]; omega
+  have u1 : (1:ℝ) ≤ u := by exact_mod_cast (show 1≤u by dsimp [u]; omega)
+  have upos : (0:ℝ)<u := by linarith
+  have cap := Nat.lt_pow_succ_log_self (by decide : 1<2) Q
+  have cap' : Q < 2^u := by simpa only [u,Nat.add_comm 1] using cap
+  have both : Q^2 < 2^(2*u) := by
+    rw [mul_comm 2 u,pow_mul]
+    exact Nat.pow_lt_pow_left cap' (by decide)
+  have hL : Nat.log 2 (Q^2) < 2*u := by
+    by_contra! hh
+    have power := Nat.pow_le_pow_right (by decide : 0<2) hh
+    have b := Nat.pow_log_le_self 2 (by positivity : Q^2≠0)
+    omega
+  have hR : (Nat.log 2 (Q^2):ℝ)+2 ≤ 4*(u:ℝ) := by exact_mod_cast (show Nat.log 2 (Q^2)+2≤4*u by omega)
+  have hb := (reciprocalTotientLogBound (Q^2) (by positivity)).trans (pow_le_pow_left₀ (by positivity) hR 2)
+  apply (largePeriodWeightFinite n).trans
+  change _ * ((u:ℝ)^4/(u:ℝ)^8) ≤ ε
+  apply (mul_le_mul_of_nonneg_right hb (by positivity : 0 ≤ (u:ℝ)^4/(u:ℝ)^8)).trans
+  have limit : 16 ≤ ε*(u:ℝ) := by
+    have h := (div_le_iff₀ hε).mp (hM.trans (by exact_mod_cast hu : (M:ℝ) ≤ u))
+    linarith
+  calc
+    _ = 16/(u:ℝ)^2 := by field_simp <;> ring
+    _ ≤ 16/(u:ℝ) := div_le_div_of_nonneg_left (by norm_num) upos (by nlinarith [sq_nonneg ((u:ℝ)-1)])
+    _ ≤ ε := (div_le_iff₀ upos).mpr limit
 
 end
 end GoldbachPacket

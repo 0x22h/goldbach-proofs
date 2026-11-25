@@ -6,8 +6,8 @@
     "en": "Cut all rational-peak tails simultaneously at sublinear cost"
   },
   "brief": {
-    "zh": "以共同半径 Q²/n 截断每一个中心。逐峰积分再按 φ(q) 个分子求和；需要对 q≤Q² 的 1/φ(q) 总和给出足够节省。q=1 时包含两个区间端点。",
-    "en": "Truncate each peak at the common radius Q²/n. Integrate its tail, then sum the reciprocal-totient cost. For q=1 the two interval endpoints both occur."
+    "zh": "共同半径为 Q²/n。用洛伦兹尾积分、每个分母至多 2φ(q) 个分子，以及 ∑_{q≤Q²}1/φ(q)≤4Q，得到全体尾部至多 64πn/Q。包括 q=1 的两个端点。",
+    "en": "At common radius Q²/n, Lorentz integration, at most 2φ(q) centers and a reciprocal-totient sum ≤4Q give total leakage ≤64πn/Q. Both endpoints for q=1 are included."
   },
   "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
   "program": "correlation",
