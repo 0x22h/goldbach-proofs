@@ -1302,7 +1302,7 @@ private theorem progressionMajorant {n d : ℕ} (hn : 0<n) (hd : 0<d) (hQ : d �
       rw [eq,norm_mul,hz,one_mul,← norm_mul,geom_sum_mul]
       exact (norm_sub_le ..).trans (by norm_num [norm_pow,hz])
     have hc := integerChord ((d:ℝ)*t) k (abs_le.mpr ⟨by linarith,by linarith⟩)
-    have eq : (d:ℝ)*t-(k:ℝ) = (d:ℝ)*(t-(k:ℝ)/d) := by field_simp; ring
+    have eq : (d:ℝ)*t-(k:ℝ) = (d:ℝ)*(t-(k:ℝ)/d) := by field_simp <;> ring
     rw [eq,abs_mul,abs_of_pos dr] at hc
     change 4*((d:ℝ)*b) ≤ ‖z-1‖ at hc
     have hAb : (A*d)*b ≤ 1/2 := by linarith only [mul_le_mul_of_nonneg_left hc hA,hprod]
@@ -1343,13 +1343,118 @@ theorem progressionLeakage (n d M : ℕ) (hn : 0<n) (hd : 0<d) (hQ : d ≤ gridQ
       fun k _ => mul_le_mul_of_nonneg_left (lorentzIntegral hr _) (by positivity)
     _ = ((d:ℝ)+1)/d * (Real.pi*(n:ℝ)/(gridQ n:ℝ)) := by
       simp only [Finset.sum_const,nsmul_eq_mul,Finset.card_range,Nat.cast_add,Nat.cast_one,r]
-      field_simp; ring
+      field_simp <;> ring
     _ ≤ _ := by
       have h1 : (1:ℝ) ≤ d := by exact_mod_cast hd
       have h2 : ((d:ℝ)+1)/d ≤ 2 := (div_le_iff₀ dr).mpr (by linarith)
       calc
         _ ≤ 2*(Real.pi*(n:ℝ)/(gridQ n:ℝ)) := mul_le_mul_of_nonneg_right h2 (by positivity)
         _ = _ := by ring
+
+
+private def rationalWindows (n : ℕ) (eligible : ℕ → Prop) : Set ℝ :=
+  {t | ∃ q a : ℕ, 1 ≤ q ∧ q ≤ (gridQ n)^2 ∧ a ≤ q ∧ Nat.Coprime a q ∧ eligible q ∧
+    |t-(a:ℝ)/(q:ℝ)| ≤ ((gridQ n:ℝ)^2)/((q:ℝ)*(n:ℝ))}
+private def shortOrder (n q : ℕ) : Prop :=
+  Odd q ∧ ∃ j : ℕ, 1 ≤ j ∧ j ≤ (Nat.log 2 (gridQ n)+1)^2 ∧ q ∣ 2^j-1
+private def density (n : ℕ) (t : ℝ) := ‖GoldbachBudget.spec n (GoldbachBudget.high n) t‖^2
+private def ceilingEnergy (n : ℕ) := (n:ℝ)*(1+Real.log (n:ℝ))^4
+private def regionMass (n : ℕ) (s : Set ℝ) :=
+  ∫ t in (0:ℝ)..1, s.indicator (density n) t
+
+private theorem measurableWindows (n : ℕ) (p : ℕ → Prop) : MeasurableSet (rationalWindows n p) := by
+  let Index := {i : ℕ × ℕ // 1 ≤ i.1 ∧ i.1 ≤ (gridQ n)^2 ∧ i.2 ≤ i.1 ∧ i.2.Coprime i.1 ∧ p i.1}
+  have eq : rationalWindows n p = ⋃ i : Index,
+      {t : ℝ | |t-(i.val.2:ℝ)/(i.val.1:ℝ)| ≤ ((gridQ n:ℝ)^2)/((i.val.1:ℝ)*(n:ℝ))} := by
+    ext t
+    constructor
+    · rintro ⟨q,a,hq,hQ,ha,hc,hp,ht⟩
+      exact Set.mem_iUnion.mpr ⟨⟨(q,a),hq,hQ,ha,hc,hp⟩,ht⟩
+    · intro ht
+      obtain ⟨i,hi⟩ := Set.mem_iUnion.mp ht
+      exact ⟨i.val.1,i.val.2,i.property.1,i.property.2.1,i.property.2.2.1,
+        i.property.2.2.2.1,i.property.2.2.2.2,hi⟩
+  rw [eq]
+  exact MeasurableSet.iUnion fun _ =>
+    (isClosed_le (continuous_abs.comp (continuous_id.sub continuous_const)) continuous_const).measurableSet
+
+private theorem measurableMask (n : ℕ) : MeasurableSet (resonant n) := by
+  have hk : Continuous (fun t => packet (length n) t / (length n:ℝ)) := by unfold packet; fun_prop
+  exact (GoldbachBudget.measurableArcs n).compl.inter
+    (isOpen_lt (continuous_const : Continuous (fun _ : ℝ => (1:ℝ)/2)) hk).measurableSet
+
+private theorem continuousDensity (n : ℕ) : Continuous (density n) := by
+  unfold density GoldbachBudget.spec GoldbachBudget.phase
+  fun_prop
+
+private theorem onRegion {s : Set ℝ} (hs : MeasurableSet s) {f : ℝ → ℝ} (hf : Continuous f) :
+    IntervalIntegrable (s.indicator f) MeasureTheory.volume (0:ℝ) 1 := by
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+  exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+    (hf.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator hs
+
+private theorem regionSplit (n : ℕ) {s a : Set ℝ} (hs : MeasurableSet s) (ha : MeasurableSet a) :
+    regionMass n s = regionMass n (s ∩ a) + regionMass n (s \ a) := by
+  have he : s.indicator (density n) =
+      fun t => (s ∩ a).indicator (density n) t + (s \ a).indicator (density n) t := by
+    funext t
+    by_cases h : t ∈ s <;> by_cases k : t ∈ a <;> simp [h,k]
+  unfold regionMass
+  rw [he, intervalIntegral.integral_add (onRegion (hs.inter ha) (continuousDensity n))
+    (onRegion (hs.diff ha) (continuousDensity n))]
+
+private def deep (n : ℕ) := resonant n \ rationalWindows n (fun _ => True)
+private def spikes (n : ℕ) := {t : ℝ | ceilingEnergy n < density n t}
+
+theorem deepFloorBudget : ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
+    regionMass n (deep n \ spikes n) ≤ ε*(n:ℝ) := by
+  intro ε hε
+  obtain ⟨N,hN⟩ := maskLogDecay 4 ε hε
+  refine ⟨N, ?_⟩
+  intro n hn
+  have hb := measurableMask n
+  have hd := hb.diff (measurableWindows n (fun _ => True))
+  have hp : MeasurableSet (spikes n) := (isOpen_lt continuous_const (continuousDensity n)).measurableSet
+  let f := (resonant n).indicator (fun _ => (1:ℝ))
+  have pos : 0 ≤ ceilingEnergy n := by unfold ceilingEnergy; positivity
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, ceilingEnergy n * f t := by
+      apply intervalIntegral.integral_mono_on (by norm_num)
+        (onRegion (hd.diff hp) (continuousDensity n)) ((onRegion hb continuous_const).const_mul _)
+      intro t _
+      by_cases ht : t ∈ deep n \ spikes n
+      · have hh := ht.1.1
+        have hle : density n t ≤ ceilingEnergy n := le_of_not_gt ht.2
+        simpa [f,ht,hh] using hle
+      · by_cases hh : t ∈ resonant n <;> simp [f,ht,hh,pos]
+    _ = ceilingEnergy n * (∫ t in (0:ℝ)..1, f t) := intervalIntegral.integral_const_mul ..
+    _ ≤ _ := by
+      have h := mul_le_mul_of_nonneg_left (hN n hn) (Nat.cast_nonneg (α := ℝ) n)
+      dsimp only [ceilingEnergy,f]
+      linarith only [h]
+
+theorem energyFromRegions
+    (slow : ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n
+      ((resonant n ∩ rationalWindows n (fun _ => True)) ∩ rationalWindows n (shortOrder n)) ≤ (n:ℝ)/2304)
+    (rest : ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n
+      ((resonant n ∩ rationalWindows n (fun _ => True)) \ rationalWindows n (shortOrder n)) ≤ (n:ℝ)/2304)
+    (large : ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n (deep n ∩ spikes n) ≤ (n:ℝ)/2304) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → regionMass n (resonant n) ≤ (n:ℝ)/576 := by
+  obtain ⟨A,hA⟩ := slow
+  obtain ⟨B,hB⟩ := rest
+  obtain ⟨C,hC⟩ := large
+  obtain ⟨D,hD⟩ := deepFloorBudget (1/2304) (by norm_num)
+  refine ⟨max (max A B) (max C D), ?_⟩
+  intro n hn he
+  have hm := measurableMask n
+  have hw := measurableWindows n (fun _ => True)
+  have ho := measurableWindows n (shortOrder n)
+  have hp : MeasurableSet (spikes n) := (isOpen_lt continuous_const (continuousDensity n)).measurableSet
+  have e₁ := regionSplit n hm hw
+  have e₂ := regionSplit n (hm.inter hw) ho
+  have e₃ := regionSplit n (s := deep n) (hm.diff hw) hp
+  change regionMass n (resonant n) = _ + regionMass n (deep n) at e₁
+  linarith only [e₁,e₂,e₃,hA n (by omega) he,hB n (by omega) he,hC n (by omega) he,hD n (by omega)]
 
 end
 end GoldbachPacket
