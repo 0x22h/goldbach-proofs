@@ -876,8 +876,11 @@ theorem lagEnergyIdentity (n : ℕ) (a : ℕ → ℝ) :
     by_cases ht : t ∈ resonant n
     · simpa [f,A,H,ht] using pointwiseLagEnergy n a t
     · simp [f,ht]
-  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 :=
-    IntervalIntegrable.fun_sum fun h _ => hiA h
+  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 := by
+    have eq : (fun t => ∑ h ∈ H, A h * f h t) = ∑ h ∈ H, (fun t => A h * f h t) := by
+      funext t; simp
+    rw [eq]
+    exact IntervalIntegrable.sum H (fun h _ => hiA h)
   have split : H = Finset.Icc 1 (min n ((length n)^2)) ∪ Finset.Icc ((length n)^2+1) n := by
     ext h; simp only [H,Finset.mem_union,Finset.mem_Icc]; omega
   have dis : Disjoint (Finset.Icc 1 (min n ((length n)^2))) (Finset.Icc ((length n)^2+1) n) := by
