@@ -63,6 +63,8 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-wheel-grid-tail": "GoldbachPacket.gridTail",
+              "L-goldbach-packet-wheel-minor-leakage": "GoldbachPacket.wheelMinorLeakage",
               "L-goldbach-packet-wheel-smooth-envelope": "GoldbachPacket.wheelEnvelope",
               "L-goldbach-packet-wheel-envelope-transfer": "GoldbachPacket.wheelLeakageTransfer",
               "L-goldbach-packet-wheel-geometric": "GoldbachPacket.wheelGeometric",

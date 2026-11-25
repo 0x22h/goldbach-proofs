@@ -1057,5 +1057,158 @@ theorem wheelLeakageTransfer
       · simp [ht]
     _ ≤ _ := by rw [intervalIntegral.integral_const_mul]; linarith only [hN n hn]
 
+private def gridQ (n : ℕ) := (Nat.log 2 (n+2))^2
+private def lorentz (r c t : ℝ) := 1/(r^2+(t-c)^2)
+
+private theorem lorentzContinuous {r : ℝ} (hr : 0 < r) (c : ℝ) : Continuous (lorentz r c) := by
+  unfold lorentz
+  fun_prop (disch := intro t; positivity)
+
+/-- The integral is bounded uniformly in the location of the center, including endpoints. -/
+private theorem lorentzIntegral {r : ℝ} (hr : 0 < r) (c : ℝ) :
+    (∫ t in (0:ℝ)..1, lorentz r c t) ≤ Real.pi/r := by
+  let F := fun t : ℝ => Real.arctan ((t-c)/r)/r
+  have deriv (t : ℝ) : HasDerivAt F (lorentz r c t) t := by
+    have h := (((Real.hasDerivAt_arctan ((t-c)/r)).comp t
+      (((hasDerivAt_id t).sub_const c).div_const r)).div_const r)
+    convert h using 1
+    dsimp [lorentz]
+    field_simp
+    <;> ring
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => deriv t)
+    ((lorentzContinuous hr c).intervalIntegrable ..)]
+  dsimp [F]
+  rw [← sub_div]
+  exact div_le_div_of_nonneg_right (by linarith [Real.arctan_lt_pi_div_two ((1-c)/r),
+    Real.neg_pi_div_two_lt_arctan ((0-c)/r)]) hr.le
+
+/-- Every k/30, including 0 and 1, belongs to the frozen family after reducing the fraction. -/
+private theorem gridExclusion {n k : ℕ} {t : ℝ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
+    (hk : k ≤ 30) (hm : t ∉ GoldbachBudget.arcs n) :
+    (gridQ n:ℝ)/(30*(n:ℝ)) < |t-(k:ℝ)/30| := by
+  obtain ⟨g,a,q,hg,hcop,hk',hq'⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right k (by decide : 0 < 30))
+  have hq : 0 < q := by by_contra! hz; simp [show q=0 by omega] at hq'
+  have hq30 : q ≤ 30 := by nlinarith [Nat.mul_le_mul_left q hg]
+  have haq : a ≤ q := by
+    exact (Nat.mul_le_mul_right_iff hg).mp (show a*g ≤ q*g by omega)
+  have eq : (k:ℝ)/30 = (a:ℝ)/(q:ℝ) := by
+    apply (div_eq_div_iff (by norm_num) (by positivity)).mpr
+    exact_mod_cast (show k*q = a*30 by rw [hk']; calc (a*g)*q = a*(q*g) := by ring; _ = _ := by rw [← hq'])
+  by_contra! h
+  apply hm
+  refine ⟨q,a,hq,hq30.trans hQ,haq,hcop,?_⟩
+  rw [← eq]
+  exact h.trans (div_le_div_of_nonneg_left (Nat.cast_nonneg _) (by positivity)
+    (mul_le_mul_of_nonneg_right (by exact_mod_cast hq30 : (q:ℝ) ≤ 30) (Nat.cast_nonneg _)))
+
+private theorem gridChord (t : ℝ) (k : ℕ) (hk : |30*t-(k:ℝ)| ≤ 1/2) :
+    |t-(k:ℝ)/30| ≤ gridDistance t := by
+  let u := 30*t-(k:ℝ)
+  let x := Real.pi*u
+  let y := 2*Real.pi*(30*t)
+  have hangle : y = 2*x + (k:ℝ)*(2*Real.pi) := by dsimp [y,x,u]; ring
+  have hs : gridDistance t ^ 2 = 2-2*Real.cos y := by
+    change ‖Complex.exp ((y:ℂ)*Complex.I)-1‖^2 = _
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp only [Complex.sub_re,Complex.sub_im,Complex.one_re,Complex.one_im,sub_zero,
+      Complex.exp_ofReal_mul_I_re,Complex.exp_ofReal_mul_I_im]
+    nlinarith only [Real.sin_sq_add_cos_sq y]
+  have he : gridDistance t = 2*|Real.sin x| := by
+    apply (sq_eq_sq₀ (norm_nonneg _) (by positivity)).mp
+    rw [hs,hangle,Real.cos_add_nat_mul_two_pi,Real.cos_two_mul]
+    nlinarith only [sq_abs (Real.sin x), Real.sin_sq_add_cos_sq x]
+  have hx : |x| ≤ Real.pi/2 := by
+    dsimp [x]; rw [abs_mul, abs_of_pos Real.pi_pos]
+    linarith [mul_le_mul_of_nonneg_left hk Real.pi_pos.le]
+  have hj := Real.mul_abs_le_abs_sin hx
+  have hxu : |x| = Real.pi*|u| := by dsimp [x]; rw [abs_mul,abs_of_pos Real.pi_pos]
+  rw [hxu,show 2/Real.pi*(Real.pi*|u|) = 2*|u| by field_simp] at hj
+  have hu : |u| = 30*|t-(k:ℝ)/30| := by
+    rw [show u=30*(t-(k:ℝ)/30) by dsimp [u]; ring,abs_mul]
+    norm_num
+  rw [hu] at hj
+  rw [he]
+  linarith [abs_nonneg (t-(k:ℝ)/30)]
+
+private theorem gridPointMajorant {n : ℕ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
+    (t : ℝ) (ht : t ∈ Set.Icc (0:ℝ) 1) :
+    (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t ≤
+      ∑ k ∈ Finset.range 31, 2*lorentz ((gridQ n:ℝ)/(30*(n:ℝ))) ((k:ℝ)/30) t := by
+  let r := (gridQ n:ℝ)/(30*(n:ℝ))
+  have hr : 0 < r := by dsimp [r]; have : 0 < gridQ n := by omega; positivity
+  have nonneg (k : ℕ) : 0 ≤ 2*lorentz r ((k:ℝ)/30) t := by unfold lorentz; positivity
+  by_cases hm : t ∈ (GoldbachBudget.arcs n)ᶜ
+  · rw [Set.indicator_of_mem hm]
+    let k := ⌊30*t+1/2⌋₊
+    obtain ⟨h0,h1⟩ := ht
+    have hlo : (k:ℝ) ≤ 30*t+1/2 := Nat.floor_le (by linarith)
+    have hhi : 30*t+1/2 < (k:ℝ)+1 := Nat.lt_floor_add_one _
+    have hk : k ≤ 30 := by
+      by_contra! h
+      have h' : (31:ℝ) ≤ k := by exact_mod_cast h
+      linarith
+    have close : |30*t-(k:ℝ)| ≤ 1/2 := abs_le.mpr ⟨by linarith,by linarith⟩
+    have hdist := gridChord t k close
+    have hcut : r ≤ |t-(k:ℝ)/30| := (gridExclusion hn hQ hk hm).le
+    have h1' := pow_le_pow_left₀ hr.le (hcut.trans hdist) 2
+    have h2' := pow_le_pow_left₀ (abs_nonneg _) hdist 2
+    rw [sq_abs] at h2'
+    have bound : gridEnvelope n t ≤ 2*lorentz r ((k:ℝ)/30) t := by
+      unfold gridEnvelope lorentz
+      rw [← mul_div_assoc, mul_one]
+      apply (div_le_div_iff₀ (by positivity) (by positivity)).mpr
+      nlinarith only [mul_le_mul_of_nonneg_left (add_le_add h1' h2') (sq_nonneg ((n:ℝ)+1))]
+    exact bound.trans (Finset.single_le_sum (fun k _ => nonneg k) (Finset.mem_range.mpr (by omega : k<31)))
+  · rw [Set.indicator_of_notMem hm]
+    exact Finset.sum_nonneg fun k _ => nonneg k
+
+/-- The minor-arc tail is bounded by an explicit multiple of n/Q(n). -/
+theorem gridTailQuantitative (n : ℕ) (hn : 0 < n) (hQ : 30 ≤ gridQ n) :
+    (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t) ≤
+      1860*Real.pi*(n:ℝ)/(gridQ n:ℝ) := by
+  let r := (gridQ n:ℝ)/(30*(n:ℝ))
+  have hq : 0 < gridQ n := by omega
+  have hr : 0 < r := by dsimp [r]; positivity
+  have hg : Continuous (gridEnvelope n) := by
+    unfold gridEnvelope gridDistance GoldbachBudget.phase
+    fun_prop (disch := intro t; positivity)
+  have hi : IntervalIntegrable ((GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n)) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (hg.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator (GoldbachBudget.measurableArcs n).compl
+  let f := fun (k : ℕ) (t : ℝ) => 2*lorentz r ((k:ℝ)/30) t
+  have hf (k : ℕ) : Continuous (f k) := continuous_const.mul (lorentzContinuous hr _)
+  have hsum : Continuous (fun t => ∑ k ∈ Finset.range 31, f k t) := by fun_prop
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, ∑ k ∈ Finset.range 31, f k t :=
+      intervalIntegral.integral_mono_on (by norm_num) hi (hsum.intervalIntegrable ..)
+        (fun t ht => gridPointMajorant hn hQ t ht)
+    _ = ∑ k ∈ Finset.range 31, 2*(∫ t in (0:ℝ)..1, lorentz r ((k:ℝ)/30) t) := by
+      rw [intervalIntegral.integral_finsetSum (fun k _ => (hf k).intervalIntegrable ..)]
+      simp only [f,intervalIntegral.integral_const_mul]
+    _ ≤ ∑ _k ∈ Finset.range 31, 2*(Real.pi/r) := Finset.sum_le_sum
+      fun k _ => mul_le_mul_of_nonneg_left (lorentzIntegral hr _) (by norm_num)
+    _ = _ := by simp [r]; field_simp; ring
+
+theorem gridTail (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t) ≤ ε*(n:ℝ) := by
+  obtain ⟨M,hM⟩ := exists_nat_ge (1860*Real.pi/ε)
+  let B := max 30 M
+  refine ⟨2^B, ?_⟩
+  intro n hn
+  have hn' : 0 < n := lt_of_lt_of_le (by positivity : 0 < 2^B) hn
+  have hb : B ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by omega)
+  have hq : B ≤ gridQ n := by
+    unfold gridQ; nlinarith [Nat.le_mul_self (Nat.log 2 (n+2))]
+  apply (gridTailQuantitative n hn' ((le_max_left ..).trans hq)).trans
+  have hq' : 0 < gridQ n := by have : 30 ≤ B := le_max_left ..; omega
+  have hM' : 1860*Real.pi/ε ≤ (gridQ n:ℝ) := hM.trans (by exact_mod_cast (le_trans (le_max_right 30 M) hq))
+  apply (div_le_iff₀ (by positivity)).mpr
+  have hh := mul_le_mul_of_nonneg_right ((div_le_iff₀ hε).mp hM') (Nat.cast_nonneg (α := ℝ) n)
+  linarith only [hh]
+
+theorem wheelMinorLeakage : ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
+    (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (fun u => ‖GoldbachBudget.spec n wheel u‖^2) t) ≤ ε*(n:ℝ) := wheelLeakageTransfer wheelEnvelope gridTail
+
 end
 end GoldbachPacket
