@@ -625,6 +625,33 @@ theorem shortEnvelope (n : ℕ) (a : ℕ → ℝ) (M : ℝ) (hM : 0 ≤ M) (ha :
     _ ≤ B + 2*((length n:ℝ)^2*B) := add_le_add (each 0) (by linarith only [hs])
     _ = _ := by dsimp [B]; ring
 
+/-- From n=8 onward the cutoff removes the only even prime. Both lag sequences vanish at odd indices. -/
+theorem evenLagSupport (n : ℕ) (hn : 8 ≤ n) (h : ℕ) (hh : Odd h) :
+    correlation n h (GoldbachBudget.high n) = 0 ∧ correlation n h wheel = 0 := by
+  have highEven (k : ℕ) (hk : k % 2 = 0) : GoldbachBudget.high n k = 0 := by
+    by_cases hp : Nat.Prime k
+    · have heq := hp.eq_two_or_odd.resolve_right (by omega)
+      subst k
+      have hcut : 2^3 ≤ n := by omega
+      simp [GoldbachBudget.high, GoldbachBudget.low, hcut]
+    · simp [GoldbachBudget.high, GoldbachBudget.low, GoldbachBudget.w, hp]
+  have wheelEven (k : ℕ) (hk : k % 2 = 0) : wheel k = 0 := by
+    have hnc : ¬Nat.Coprime k 30 := by
+      intro hcop
+      have hd := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero hk) (by decide : 2 ∣ 30)
+      rw [hcop.gcd_eq_one] at hd
+      norm_num at hd
+    simp [wheel, hnc]
+  have zero (a : ℕ → ℝ) (ha : ∀ k, k % 2 = 0 → a k = 0) : correlation n h a = 0 := by
+    unfold correlation
+    apply Finset.sum_eq_zero
+    intro k _
+    obtain ⟨j,hj⟩ := hh
+    by_cases hk : k % 2 = 0
+    · rw [ha k hk, zero_mul]
+    · rw [ha (k+h) (by omega), mul_zero]
+  exact ⟨zero _ highEven, zero _ wheelEven⟩
+
 private theorem lengthUpper (n : ℕ) (hn : 1 ≤ n) : (length n:ℝ) ≤ 2*(1+Real.log (n:ℝ)) := by
   have he : (2:ℝ)^(Nat.log 2 n) ≤ (n:ℝ) := by
     exact_mod_cast Nat.pow_log_le_self 2 (by omega : n ≠ 0)
