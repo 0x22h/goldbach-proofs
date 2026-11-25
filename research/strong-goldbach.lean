@@ -498,8 +498,7 @@ private theorem maskedArea (n : ℕ) :
   have heq : resonant n = (GoldbachBudget.arcs n)ᶜ ∩ A := by
     ext t
     change (_ ∧ (1:ℝ)/2 < packet m t / (m:ℝ)) ↔ (_ ∧ (m:ℝ)/2 < packet m t)
-    rw [lt_div_iff₀ hmr]
-    ring_nf
+    rw [lt_div_iff₀ hmr, show (1:ℝ)/2*(m:ℝ) = (m:ℝ)/2 by ring] <;> rfl
   have integ {s : Set ℝ} (hs : MeasurableSet s) :
       IntervalIntegrable (s.indicator (fun _ => (1:ℝ))) MeasureTheory.volume (0:ℝ) 1 := by
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
