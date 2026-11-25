@@ -34,6 +34,27 @@ RELEASE_REASONS = {
 }
 
 
+HARNESS_NAMES = {"codex", "claude-code", "cursor", "gemini-cli", "opencode", "other", "unknown"}
+AGENT_LABEL = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9 ._:/+\-]{0,95}", re.ASCII)
+
+
+def agent_metadata(value):
+    """Normalize self-reported identifiers; missing data stays explicitly unknown."""
+    if value is None:
+        return {"model": "unknown", "harness": "unknown", "harness_version": "unknown"}
+    if not isinstance(value, dict) or set(value) - {"model", "harness", "harness_version"}:
+        raise ValueError("invalid_agent_metadata")
+    result = {}
+    for key in ("model", "harness", "harness_version"):
+        label = value.get(key, "unknown")
+        if not isinstance(label, str) or not AGENT_LABEL.fullmatch(label):
+            raise ValueError("invalid_agent_metadata")
+        result[key] = " ".join(label.lower().split())
+    if result["harness"] not in HARNESS_NAMES:
+        raise ValueError("invalid_agent_metadata")
+    return result
+
+
 def canonical_handle(value):
     if isinstance(value, str) and value.isascii() and len(value) <= 39 and HANDLE.fullmatch(value.lower()):
         return value.lower()
@@ -93,6 +114,12 @@ class Desk:
             columns = {row[1] for row in conn.execute("PRAGMA table_info(goldbach_leases)")}
             if "last_polled_at" not in columns:
                 conn.execute("ALTER TABLE goldbach_leases ADD COLUMN last_polled_at INTEGER")
+            # Additive migration keeps existing leases/verdicts and old clients usable.
+            for column in ("model", "harness", "harness_version"):
+                if column not in columns:
+                    conn.execute(f"ALTER TABLE goldbach_leases ADD COLUMN {column} TEXT NOT NULL DEFAULT 'unknown'")
+            if "agent_reported" not in columns:
+                conn.execute("ALTER TABLE goldbach_leases ADD COLUMN agent_reported INTEGER NOT NULL DEFAULT 0")
 
     @contextmanager
     def transaction(self, write=False):
@@ -230,17 +257,25 @@ class Desk:
             pr, head = body.get("pr"), body.get("head")
             if not positive_id(pr, 9_999_999) or not isinstance(head, str) or not HEAD.fullmatch(head):
                 return error(400, "invalid_pull_request")
+            try:
+                agent = agent_metadata(body.get("agent"))
+            except ValueError:
+                return error(400, "invalid_agent_metadata")
             if lease["pr"] is not None:
                 if lease["pr"] == pr and lease["head"] == head:
+                    if "agent" in body and any(agent[key] != lease[key] for key in agent):
+                        return error(409, "submission_metadata_frozen")
                     return 200, {"submitted": True, **self.lease_times(lease)}
                 return error(409, "lease_already_submitted")
 
             # A submitted proof waits for a hosted runner independently of its authoring lease.
             expires = now + SUBMISSION_SECONDS
             conn.execute("""
-                UPDATE goldbach_leases SET pr = ?, head = ?, submitted_at = ?, expires_at = ?
+                UPDATE goldbach_leases SET pr = ?, head = ?, submitted_at = ?, expires_at = ?,
+                    model = ?, harness = ?, harness_version = ?, agent_reported = ?
                 WHERE token_hash = ?
-            """, (pr, head, now, expires, digest))
+            """, (pr, head, now, expires, agent["model"], agent["harness"], agent["harness_version"],
+                  int(body.get("agent") is not None), digest))
             return 200, {"submitted": True, "expires_at": expires,
                          "absolute_expires_at": lease["absolute_expires_at"]}
 
@@ -354,6 +389,35 @@ class Desk:
         )
         return len(proved), len(self.gaps), available
 
+    @staticmethod
+    def annotate_verdicts(records, conn):
+        """Attach attribution via the authorized run, without changing signed verdict bytes."""
+        for record in records:
+            row = conn.execute("""
+                SELECT model, harness, harness_version, agent_reported FROM goldbach_leases
+                WHERE run_id = ? AND gap = ? AND pr IS NOT NULL AND head IS NOT NULL
+            """, (record["run_id"], record["lemma_id"])).fetchone()
+            record["agent"] = dict(zip(("model", "harness", "harness_version"), row[:3])) if row else agent_metadata(None)
+            record["agent"]["source"] = "self_reported" if row and row[3] else "unrecorded"
+
+    @staticmethod
+    def agent_rankings(conn, now):
+        # Same first-acceptance rule as the contributor leaderboard, one attribution per lemma.
+        winners = conn.execute("""
+            WITH accepted AS (
+                SELECT model, harness, finished_at,
+                       ROW_NUMBER() OVER (PARTITION BY gap ORDER BY finished_at, run_id) AS position
+                FROM goldbach_leases
+                WHERE verdict = 'ACCEPTED' AND run_id IS NOT NULL AND finished_at <= ?
+            )
+            SELECT model, harness FROM accepted WHERE position = 1
+        """, (now,)).fetchall()
+        def ranking(column):
+            counts = Counter(row[column] for row in winners)
+            return [{"name": name, "accepted": count} for name, count in
+                    sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))]
+        return {"models": ranking(0), "harnesses": ranking(1), "proofs": len(winners)}
+
     def public_status(self):
         now = int(time.time())
         with self.transaction() as conn:
@@ -413,6 +477,7 @@ class Desk:
                     ORDER BY accepted DESC, latest_accepted_at DESC, handle
                 """, (now, now - 3600, now - 3600))
             ]
+            agent_rankings = self.agent_rankings(conn, now)
         all_time = [
             {key: row[key] for key in ("handle", "accepted", "latest_accepted_at")}
             for row in first_acceptances
@@ -426,7 +491,7 @@ class Desk:
         )
         return {
             "active": active, "sessions": sessions, "assignments": assignments,
-            "activities": activities, "leaderboard": leaderboard,
+            "activities": activities, "leaderboard": leaderboard, "agent_rankings": agent_rankings,
             "rankings": {
                 "all_time": all_time,
                 "hour": hour,

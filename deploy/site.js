@@ -125,6 +125,7 @@ const rankingsAnnouncement = document.getElementById('rankings-announcement');
 let rankingsData = null;
 let rankingsSnapshot = null;
 let rankingMode = null;
+let agentRankingsData = null;
 const locale = document.documentElement.lang;
 const eventTime = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' });
 const relativeTime = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
@@ -462,6 +463,15 @@ function renderLogEntry(run) {
   );
   row.append(label, verdictTag(strings[judgement], judgement), runLink(run, strings.run));
   article.append(row);
+  if (run.agent) {
+    const a = run.agent;
+    const model = agentName(a.model), harness = agentName(a.harness);
+    const version = a.harness_version && a.harness_version !== 'unknown' ? ' ' + a.harness_version : '';
+    article.append(element('p', (lang === 'zh' ? '模型：' : 'Model: ') + model +
+      ' · Harness: ' + harness + version + ' · ' +
+      (a.source === 'self_reported' ? (lang === 'zh' ? '提交者自报' : 'Self-reported') :
+        (lang === 'zh' ? '未记录' : 'Unrecorded')), 'log-note agent-attribution'));
+  }
   if (run.manifest) {
     const details = element('details', undefined, 'manifest');
     details.append(
@@ -577,19 +587,76 @@ function updateRankingTimes() {
   }
 }
 
+function agentName(name) {
+  if (!name || name === 'unknown') return lang === 'zh' ? '未记录／未知' : 'Unknown / unrecorded';
+  const tools = {codex: 'Codex', 'claude-code': 'Claude Code', cursor: 'Cursor', 'gemini-cli': 'Gemini CLI', opencode: 'OpenCode', other: lang === 'zh' ? '其他工具' : 'Other tools'};
+  return tools[name] || name;
+}
+
+function renderAgentRankingRow(entry, index) {
+  const item = element('li', undefined, 'ranking-row agent-ranking-row');
+  item.append(element('span', index + 1, 'ranking-position'),
+    element('strong', agentName(entry.name), 'ranking-name'));
+  const result = element('div', undefined, 'ranking-result');
+  result.append(element('span', '+' + entry.accepted.toLocaleString(locale), 'ranking-score'),
+    element('span', strings.rankingPeriods.all_time, 'ranking-period'));
+  item.append(result);
+  return item;
+}
+
+function renderAgentColumns(container, limit = Infinity) {
+  container.replaceChildren(...['models', 'harnesses'].map(dimension => {
+    const column = element('section', undefined, 'agent-ranking-column');
+    const title = dimension === 'models' ? (lang === 'zh' ? '模型' : 'Models') : (lang === 'zh' ? 'Harness 工具' : 'Harness tools');
+    const list = element('ol', undefined, 'ranking-list');
+    list.setAttribute('aria-label', title);
+    fillRankings(list, (agentRankingsData?.[dimension] || []).slice(0, limit), 'agents');
+    column.append(element('h3', title), list);
+    return column;
+  }));
+}
+
+function renderFullRankings() {
+  const agents = rankingMode === 'agents';
+  const columns = document.getElementById('agent-rankings-full');
+  columns.hidden = !agents;
+  rankingsFullList.hidden = agents;
+  if (agents) renderAgentColumns(columns);
+  else fillRankings(rankingsFullList, rankingsData.all_time, 'all_time');
+}
+
 function fillRankings(list, data, mode) {
-  const empty = mode === 'hour' ? strings.noHourContributors : strings.noContributors;
+  const empty = mode === 'agents'
+    ? (agentRankingsData ? (lang === 'zh' ? '暂无通过验证的记录。' : 'No verified contributions yet.') : strings.rankingsUnavailable)
+    : mode === 'hour' ? strings.noHourContributors : strings.noContributors;
   list.replaceChildren(...(data.length
-    ? data.map((entry, index) => renderRankingRow(entry, index, mode))
+    ? data.map((entry, index) => mode === 'agents' ? renderAgentRankingRow(entry, index) : renderRankingRow(entry, index, mode))
     : [element('li', empty, 'ranking-empty')]));
 }
 
 function renderRankingMode() {
   if (!rankingsData) return;
-  const rows = rankingsData[rankingMode];
+  const agents = rankingMode === 'agents';
+  const rows = agents ? (agentRankingsData?.models || []) : rankingsData[rankingMode];
+  const columns = document.getElementById('agent-ranking-columns');
+  columns.hidden = !agents;
+  rankingsList.hidden = agents;
+  if (agents) renderAgentColumns(columns, 6);
+  document.getElementById('agent-ranking-controls').hidden = !agents;
+  document.querySelector('.ranking-candidate').hidden = agents;
+  rankingsAll.disabled = agents && !agentRankingsData;
+  rankingsAll.textContent = agents ? (lang === 'zh' ? '查看完整榜单 ↗' : 'See full leaderboard ↗') :
+    (lang === 'zh' ? '查看全部贡献者 ↗' : 'See all contributors ↗');
+  document.getElementById('rankings-dialog-title').textContent = agents
+    ? (lang === 'zh' ? '模型与 Harness 贡献榜' : 'Model and harness contributions')
+    : (lang === 'zh' ? '全部已核验贡献者' : 'All verified contributors');
+  document.getElementById('rankings-summary').textContent = agents
+    ? (lang === 'zh' ? '按本研究台累计首次通过的引理数排列。' : 'Ranked by all-time first accepted lemmas on this research desk.')
+    : strings.rankingsSummary(rankingsData.contributors.toLocaleString(locale), rankingsData.proofs.toLocaleString(locale));
   fillRankings(rankingsList, rows.slice(0, 6), rankingMode);
   document.getElementById('ranking-next-place').textContent = String(rows.length + 1);
-  rankingsAnnouncement.textContent = strings.rankingsCount(rows.length);
+  rankingsAnnouncement.textContent = agents ? (lang === 'zh' ? '共 ' + rows.length + ' 项。' : rows.length + ' entries.') : strings.rankingsCount(rows.length);
+  if (rankingsDialog.open) renderFullRankings();
 }
 
 function selectRankingMode(mode) {
@@ -598,31 +665,32 @@ function selectRankingMode(mode) {
   renderRankingMode();
 }
 
-function renderRankings(rankings) {
+function renderRankings(rankings, agentRankings) {
   if (!rankings) {
     if (!rankingsData) rankingsList.replaceChildren(element('li', strings.rankingsUnavailable, 'ranking-empty'));
     return;
   }
-  const snapshot = JSON.stringify(rankings);
+  const snapshot = JSON.stringify({rankings, agentRankings});
   if (rankingsSnapshot === snapshot) {
     updateRankingTimes();
     return;
   }
   rankingsData = rankings;
+  agentRankingsData = agentRankings || null;
   rankingsSnapshot = snapshot;
   rankingsAll.disabled = false;
   document.getElementById('rankings-summary').textContent = strings.rankingsSummary(
     rankings.contributors.toLocaleString(locale), rankings.proofs.toLocaleString(locale)
   );
   selectRankingMode(rankingMode ?? (rankings.hour.length ? 'hour' : 'all_time'));
-  if (rankingsDialog.open) fillRankings(rankingsFullList, rankings.all_time, 'all_time');
+
 }
 
 for (const button of rankingsModes) {
   button.addEventListener('click', () => selectRankingMode(button.dataset.rankingMode));
 }
 rankingsAll.addEventListener('click', () => {
-  fillRankings(rankingsFullList, rankingsData.all_time, 'all_time');
+  renderFullRankings();
   rankingsDialog.showModal();
 });
 
@@ -632,7 +700,7 @@ function showDeskNotice(message) {
 }
 
 function renderDesk(desk) {
-  renderRankings(desk?.rankings);
+  renderRankings(desk?.rankings, desk?.agent_rankings);
   if (!desk) {
     showDeskNotice(lastDesk === null ? strings.deskUnavailable : strings.stale);
     if (lastDesk === null) {

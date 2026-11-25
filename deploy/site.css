@@ -1082,3 +1082,18 @@ body:not([data-problem]) .hero .open-status { vertical-align: middle; }
   left: -18.181818%; top: -76.136364%;
 }
 @media print { .discussion-dock { display: none; } }
+
+/* Self-reported model and harness contribution boards. */
+.agent-ranking-controls[hidden], .ranking-candidate[hidden] { display: none; }
+.agent-ranking-controls p { max-width: 78ch; margin: 12px 0 20px; font-size: .875rem; line-height: 1.7; }
+.agent-ranking-row { grid-template-columns: 2.5rem minmax(0, 1fr) auto; }
+.agent-ranking-row .ranking-name { overflow-wrap: anywhere; }
+.agent-attribution { margin: 0 0 12px; overflow-wrap: anywhere; }
+
+.agent-ranking-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.agent-ranking-column { min-width: 0; }
+.agent-ranking-column h3 { margin: 0 0 12px; font-size: 1rem; }
+.agent-ranking-columns[hidden], .ranking-list[hidden] { display: none; }
+@media (max-width: 600px) {
+  .agent-ranking-columns { grid-template-columns: 1fr; gap: 20px; }
+}

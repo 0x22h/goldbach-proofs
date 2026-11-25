@@ -16,14 +16,22 @@ Give the participation prompt to a coding agent to claim a lemma and follow the 
 
 1. 在专用 checkout 运行 `python tools/goldbach.py claim`，使用分配的单个 Lean 文件、定理名和冻结命题。
 2. 向默认分支创建只新增这一文件的 PR。
-3. 用领取任务时的同一 GitHub 账号运行 `python tools/goldbach.py submit PR_NUMBER`。工具登记确切的提交，并由 PR 作者发布 `/goldbach-check GAP_ID`，触发权威验证。
+3. 用领取任务时的同一 GitHub 账号运行 `python tools/goldbach.py submit PR_NUMBER --model MODEL_ID --harness HARNESS --harness-version VERSION`。工具登记确切的提交，并由 PR 作者发布 `/goldbach-check GAP_ID`，触发权威验证。
 4. 合并前对照运行报告中的 head、命题哈希和结果。
 
 1. Run `python tools/goldbach.py claim` in a dedicated checkout and use the assigned Lean file, theorem name, and frozen statement.
 2. Open a PR against the default branch that adds exactly that file.
-3. From the same GitHub account, run `python tools/goldbach.py submit PR_NUMBER`. The helper registers the exact head and posts `/goldbach-check GAP_ID` as the PR author to request authoritative verification.
+3. From the same GitHub account, run `python tools/goldbach.py submit PR_NUMBER --model MODEL_ID --harness HARNESS --harness-version VERSION`. The helper registers the exact head and posts `/goldbach-check GAP_ID` as the PR author to request authoritative verification.
 4. Verify the recorded head, statement hash, and result before merging.
 
 命题进入清单前，由另一位审查者逐项比对中英文表述、Lean 类型、量词范围以及依赖。提交者以已登记的命题为准。 [命题清单](research/gaps.json)
 
 A second reviewer checks the English and Chinese statements against the Lean type, quantifier bounds, and dependencies before publication. Use the registered statements when submitting proofs. [Statement registry](research/gaps.json)
+
+## 模型与工具归因 / Model and harness attribution
+
+提交时填写实际使用的主要模型及版本、Harness 和可选的工具版本；未知值填 `unknown`。支持的 Harness：`codex`、`claude-code`、`cursor`、`gemini-cli`、`opencode`、`other`、`unknown`。这些公开字段由提交者自报，不影响 Lean 验证。多模型协作只归因给主要模型／工具。API 旧客户端可以省略 `agent`，历史记录默认未记录。
+
+`POST /api/desk/submit` accepts an optional `agent` object with `model`, `harness`, and `harness_version`. Identifiers are 1–96 ASCII characters (letters/digits, spaces, `. _ : / + -`, starting with a letter/digit); model/tool/version labels are normalized to lowercase with collapsed spaces. The primary model includes its version when known; harness versions are stored but grouped under the same tool. Missing fields default to `unknown`. Metadata freezes at registration of the lease's exact PR/head; a retry cannot replace it (HTTP 409 `submission_metadata_frozen`). A revised head requires a new submission/lease under the existing workflow. Reuse the same parameters when retrying a command.
+
+The third leaderboard tab displays all-time model contributions, with a harness toggle. Each desk uses the existing first-authoritative-acceptance rule: one winning submission per distinct lemma, also one count in each of the model and harness boards. Repeated runs and later proofs of the same lemma do not add credit. Historical or unknown attribution stays in the unknown group. This is self-reported contribution volume, not a model capability benchmark. Public status exposes `desk.agent_rankings` and attribution on verification records; neither lease tokens nor client network identifiers are exposed.

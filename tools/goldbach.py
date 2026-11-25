@@ -125,7 +125,7 @@ def claim(path, requested, problem):
     }, ensure_ascii=False, indent=2))
 
 
-def submit(path, state, number):
+def submit(path, state, number, agent=None):
     problem = state.get("problem", "goldbach")
     if current_branch() != state["branch"]:
         raise SystemExit(f"Switch to the task branch {state['branch']} before submitting.")
@@ -151,10 +151,14 @@ def submit(path, state, number):
         or pr["changed_files"] != 1
     ):
         raise SystemExit("The PR must be yours, open, based on the Goldbach default branch, and match this one-file checkout.")
+    if state.get("submitted_head") == head and state.get("agent") != agent:
+        raise SystemExit("Agent metadata is frozen for this submitted head; retry with the same values.")
     if state.get("requested") == {"pr": number, "head": head}:
         print(f"Verification already requested for PR {number} ({head[:12]}).")
         return
     submission = {"pr": number, "head": head}
+    if agent is not None:
+        submission["agent"] = agent
     try:
         desk("submit", submission, state["token"], problem=problem)
     except DeskRefusal as refusal:
@@ -169,6 +173,9 @@ def submit(path, state, number):
         state["token"] = token
         save(path, state)
         desk("submit", submission, token, problem=problem)
+    # Persist before posting a comment so a network retry keeps the same attribution.
+    state.update(submitted_head=head, agent=agent)
+    save(path, state)
     instruction = f"/goldbach-check {state['gap']['id']}"
     subprocess.run(
         ["gh", "pr", "comment", str(number), "--repo", REPO, "--body", instruction],
@@ -190,6 +197,10 @@ def main():
     release.add_argument("reason", nargs="?", default="abandoned")
     submission = modes.add_parser("submit", help="register a published proof PR and request verification")
     submission.add_argument("pr", type=int)
+    submission.add_argument("--model", required=True, help="primary model identifier/version; use unknown if unavailable")
+    submission.add_argument("--harness", required=True,
+                            choices=("codex", "claude-code", "cursor", "gemini-cli", "opencode", "other", "unknown"))
+    submission.add_argument("--harness-version", default="unknown", help="tool version, when known")
     args = parser.parse_args()
     git_dir = Path(command("git", "rev-parse", "--absolute-git-dir"))
     path = git_dir / "goldbach-lease.json"
@@ -212,7 +223,12 @@ def main():
     else:
         if args.pr < 1:
             parser.error("PR number must be positive")
-        submit(path, state, args.pr)
+        agent = {"model": args.model, "harness": args.harness, "harness_version": args.harness_version}
+        for key, value in agent.items():
+            if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9 ._:/+\-]{0,95}", value):
+                parser.error(f"{key} must be a 1–96 character ASCII identifier; use unknown if unavailable")
+            agent[key] = " ".join(value.lower().split())
+        submit(path, state, args.pr, agent)
 
 
 if __name__ == "__main__":

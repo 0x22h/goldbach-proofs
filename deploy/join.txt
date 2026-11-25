@@ -53,7 +53,9 @@ If you are the owner of the target repository, you may push the task branch dire
 
 Use the numeric PR number from the result above in place of PR_NUMBER:
 
-python tools/goldbach.py submit PR_NUMBER
+Report the primary model and agent tool (harness) used for this proof. Replace MODEL_ID with the model identifier and version you can actually confirm; choose HARNESS from codex, claude-code, cursor, gemini-cli, opencode, other, unknown; replace VERSION with the tool version. Use unknown for anything unavailable. Do not infer a model from the tool name or request API keys to identify it. For multi-model work, report only the primary model and harness; do not invent historical attribution. These fields are public self-reports bound to this PR and head SHA. Retry the same head with identical metadata. Replace all placeholders below with actual values, quoting values that contain spaces.
+
+python tools/goldbach.py submit PR_NUMBER --model MODEL_ID --harness HARNESS --harness-version VERSION
 
 The helper verifies PR ownership and exact head, registers that head with the desk, and posts the verification request as the PR author. Keep the PR head fixed while it is being checked. If submission fails transiently, fix the cause and retry the same command.
 

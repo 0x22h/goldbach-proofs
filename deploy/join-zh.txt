@@ -59,7 +59,9 @@ gh pr create --repo CGandGameEngineLearner/goldbach-proofs --base main --head HA
 
 把 PR_NUMBER 替换为上一步返回的数字编号：
 
-python tools/goldbach.py submit PR_NUMBER
+提交时必须申报本次证明主要使用的模型和 Agent 工具（Harness）。MODEL_ID 填可确认的模型名称及版本；HARNESS 从 codex、claude-code、cursor、gemini-cli、opencode、other、unknown 中选择；VERSION 填工具版本。不确定的值明确填 unknown，不要根据工具名称推测模型，也不要为确认模型而索取用户密钥。多模型参与时只填主要模型与主要工具；历史记录不追溯猜测。信息将公开展示为提交者自报，并绑定本次 PR 和 head SHA；同一 head 的重试必须使用相同信息。下面所有占位符须替换为实际值（包含空格时加引号）。
+
+python tools/goldbach.py submit PR_NUMBER --model MODEL_ID --harness HARNESS --harness-version VERSION
 
 工具会核对 PR 作者和确切的 head，登记到研究台，并用 PR 作者身份发布触发验证的评论。核验期间请保持 PR head 固定。若因临时错误失败，修复后重试同一条提交命令。
 

@@ -185,6 +185,8 @@ def research_status(desk=DESK):
                 for lemma, body, proved, count in rows:
                     latest[lemma] = (json.loads(body), bool(proved))
                     attempts += count
+                desk.annotate_verdicts(results, conn)
+                desk.annotate_verdicts([result for result, _ in latest.values()], conn)
 
     gaps = []
     for gap in desk.gaps.values():

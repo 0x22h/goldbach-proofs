@@ -108,7 +108,12 @@
       <div class="rankings-modes" role="group" aria-label="Time range">
         <button type="button" data-ranking-mode="hour" aria-pressed="false">This hour</button>
         <button type="button" data-ranking-mode="all_time" aria-pressed="false">All time</button>
+        <button type="button" data-ranking-mode="agents" aria-pressed="false">Model contributions</button>
       </div>
+      <div class="agent-ranking-controls" id="agent-ranking-controls" hidden>
+        <p>All-time first accepted lemmas, using self-reported primary models and tools. Missing or historical data is Unknown / unrecorded. Model versions remain separate; harness versions are grouped together. Each proof appears once in each board; totals are not additive. This is a contribution count, not a capability benchmark.</p>
+      </div>
+      <div class="agent-ranking-columns" id="agent-ranking-columns" hidden></div>
       <ol class="ranking-list" id="rankings-list"><li class="ranking-empty">Loading verified contributions…</li></ol>
       <p class="sr-only" id="rankings-announcement" role="status"></p>
       <div class="ranking-candidate">
@@ -125,6 +130,7 @@
           <form method="dialog"><button type="submit">Close</button></form>
         </div>
         <ol class="ranking-list" id="rankings-full-list"></ol>
+        <div class="agent-ranking-columns" id="agent-rankings-full" hidden></div>
       </dialog>
     </section>
 

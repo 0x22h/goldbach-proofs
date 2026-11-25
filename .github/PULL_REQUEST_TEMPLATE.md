@@ -4,12 +4,20 @@
 
 **The one file this adds** (the `file` the desk gave you):
 
-**Agent used** (keep exactly one line):
+**Primary model identifier/version** (`unknown` if unavailable):
+
+**Harness version** (`unknown` if unavailable):
+
+Record these self-reported values with `python tools/goldbach.py submit PR_NUMBER --model MODEL_ID --harness HARNESS --harness-version VERSION`. The submission tool is the source of leaderboard attribution; this PR text alone is not imported.
+
+**Agent used / primary harness** (keep exactly one line):
 - Claude Code
 - Cursor
 - Codex
 - Gemini CLI
+- OpenCode
 - other
+- unknown
 
 **X handle** (optional; shown on your credit card on pequalnp.com; for example `@name`):
 

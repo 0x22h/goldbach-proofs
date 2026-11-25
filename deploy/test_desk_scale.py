@@ -72,6 +72,35 @@ class DeskScaleTest(unittest.TestCase):
         self.server.wait(timeout=10)
         self.server.stdout.close()
 
+    def test_agent_attribution_across_problem_desks(self):
+        for index, path in enumerate(("", "/problems/log-rank")):
+            claim = self.request(path + "/api/desk/claim", {"handle": "alice"}, expected=201)
+            gap, token = claim["gap"], claim["lease"]["token"]
+            agent = {"model": "model-test-v1", "harness": "codex", "harness_version": "1.2.3"}
+            submission = {"pr": 40 + index, "head": "a" * 40, "agent": agent}
+            self.request(path + "/api/desk/submit", submission, token=token)
+            self.request(path + "/api/desk/submit", submission, token=token)
+            self.request(path + "/api/desk/submit", {**submission, "agent": {**agent, "model": "other"}}, token=token, expected=409)
+            run_id = 500 + index
+            self.request("/api/desk/authorize", {"gap": gap["id"], "pr": 40 + index, "head": "a" * 40,
+                         "handle": "alice", "run_id": run_id,
+                         "statement_sha256": hashlib.sha256(gap["statement"].encode()).hexdigest()}, signed=True)
+            record = {"lemma_id": gap["id"], "run_id": run_id, "run_attempt": 1, "verdict": "ACCEPTED",
+                      "manifest": {"rests_on": [{"module": gap["module"], "sha256": "a" * 64}], "defs": []}}
+            self.request("/api/verdict", record, signed=True)
+            self.request("/api/verdict", record, signed=True)
+            status = self.request(path + "/api/status")
+            self.assertEqual(status["results"][0]["agent"], {**agent, "source": "self_reported"})
+            self.assertEqual(status["desk"]["agent_rankings"], {
+                "models": [{"name": "model-test-v1", "accepted": 1}],
+                "harnesses": [{"name": "codex", "accepted": 1}], "proofs": 1})
+            self.assertEqual(status["desk"]["rankings"]["proofs"], 1)
+            for lang in ("zh", "en"):
+                page = self.request(path + "/?lang=" + lang, text=True)
+                self.assertIn('data-ranking-mode="agents"', page)
+                guide = self.request(path + "/join" + ("-zh" if lang == "zh" else "") + ".txt", text=True)
+                self.assertIn('--model MODEL_ID --harness HARNESS', guide)
+
     def test_page_views_count_only_successful_page_gets(self):
         def total():
             return self.request("/api/presence")["page_views"]
