@@ -201,6 +201,7 @@ def research_status(desk=DESK):
             row["zhihu"] = profile
     return {
         **extra,
+        "catalogue_revision": RELEASE_SHA,
         "gaps": gaps,
         "results": results,
         "desk": desk_status,
@@ -215,11 +216,8 @@ def research_status(desk=DESK):
 def goldbach_task_routes(lang):
     zh = lang == "zh"
     heading = "按子命题领取" if zh else "Choose a proof task"
-    note = ("对每个偶数证明素数卷积为正，就是最终猜想。下列工作线可分别领取。"
-            "主弧下界与次弧逐点抵消仍待证明；即使两者成立，阈值以下也要单独覆盖。" if zh else
-            "Prime convolution positivity at every even target is the final conjecture. "
-            "The major-arc floor and pointwise minor-arc cancellation are research targets. "
-            "Even with both, values below the resulting threshold need separate coverage.")
+    note = ("展开路线，查看每个子命题的声明和领取入口。" if zh else
+            "Expand a track to inspect its statements and choose a task.")
     tracks = GOLDBACH_CATALOGUE.get("tracks", [])
     names = {track["id"]: track["title"][lang] for track in tracks}
     sections = []
@@ -239,6 +237,26 @@ def goldbach_task_routes(lang):
                         f'<p>{escape(track["description"][lang])}</p>{next_steps}<div class="roadmap-tasks">'
                         f'{"".join(links)}</div></details>')
     return f'<div class="goldbach-tracks"><h3>{heading}</h3><p>{note}</p>{"".join(sections)}</div>'
+
+
+def goldbach_roadmap_page(page, lang):
+    # Catalogue order sets the two featured tracks; all tracks remain in the task list.
+    if RELEASE_SHA:
+        page = page.replace("</head>", f'<meta name="catalogue-revision" content="{escape(RELEASE_SHA)}"></head>', 1)
+    featured = GOLDBACH_CATALOGUE.get("tracks", [])[:2]
+    cards, stages = [], []
+    for track in featured:
+        key = escape(track["id"])
+        title = escape(track["title"][lang])
+        summary = escape(track["description"][lang])
+        count = sum(g.get("track") == track["id"] for g in GAPS)
+        tasks = f"{count} 个子命题" if lang == "zh" else f"{count} proof tasks"
+        cards.append(f'<button type="button" class="map-program-button" data-program="{key}" aria-pressed="false">'
+                     f'<strong class="program-name">{title}</strong><span class="program-count">{tasks}</span></button>')
+        stages.append(f'<li><h3>{title}</h3><p>{summary}</p><a href="#track-{key}">{tasks}</a></li>')
+    overview = '<ul class="roadmap topic-roadmap">' + "".join(stages) + '</ul>'
+    return page.replace("<!-- catalogue filters -->", "".join(cards)).replace(
+        "<!-- catalogue roadmap -->", overview + goldbach_task_routes(lang))
 
 
 def problem_page(page, slug, lang):
@@ -672,8 +690,7 @@ class Handler(BaseHTTPRequestHandler):
         if slug != "goldbach":
             page = problem_page(page, slug, lang)
         else:
-            page = re.sub(r'(<ol class="roadmap">.*?</ol>)',
-                          lambda match: match[0] + goldbach_task_routes(lang), page, count=1, flags=re.S)
+            page = goldbach_roadmap_page(page, lang)
         prefix = "" if slug == "goldbach" else "../../"
         page = page.replace("<!-- account -->", ZHIHU.account_link(self.headers, lang), 1)
         hero = '<section class="hero" aria-labelledby="page-title">'
