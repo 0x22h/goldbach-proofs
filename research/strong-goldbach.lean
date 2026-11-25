@@ -876,9 +876,8 @@ theorem lagEnergyIdentity (n : ℕ) (a : ℕ → ℝ) :
     by_cases ht : t ∈ resonant n
     · simpa [f,A,H,ht] using pointwiseLagEnergy n a t
     · simp [f,ht]
-  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 := by
-    simpa only [Finset.sum_apply] using (IntervalIntegrable.sum H (f := fun h t => A h * f h t)
-      (fun h _ => hiA h))
+  have hs : IntervalIntegrable (fun t => ∑ h ∈ H, A h * f h t) MeasureTheory.volume (0:ℝ) 1 :=
+    IntervalIntegrable.fun_sum fun h _ => hiA h
   have split : H = Finset.Icc 1 (min n ((length n)^2)) ∪ Finset.Icc ((length n)^2+1) n := by
     ext h; simp only [H,Finset.mem_union,Finset.mem_Icc]; omega
   have dis : Disjoint (Finset.Icc 1 (min n ((length n)^2))) (Finset.Icc ((length n)^2+1) n) := by
@@ -920,7 +919,9 @@ theorem wheelGeometric (n : ℕ) (t : ℝ) :
     rw [Finset.sum_filter]
     apply Finset.sum_congr rfl
     intro k _
-    by_cases hc : Nat.Coprime k 30 <;> simp [wheel,hc,E]
+    by_cases hc : Nat.Coprime k 30
+    · simp only [wheel, if_pos hc, Complex.ofReal_div, Complex.ofReal_ofNat, E]
+    · simp only [wheel, if_neg hc, Complex.ofReal_zero, zero_mul]
   rw [wsum]
   apply congrArg (fun z : ℂ => ((30:ℝ)/8:ℂ)*z)
   calc
@@ -951,7 +952,107 @@ theorem wheelGeometric (n : ℕ) (t : ℝ) :
       rw [Finset.sum_sigma]
       apply Finset.sum_congr rfl
       intro r _
-      exact (Finset.mul_sum ..).symm
+      change (∑ j ∈ Finset.range ((n-r)/30+1), E ((r:ℝ)*t)*E (30*(j:ℝ)*t)) =
+        E ((r:ℝ)*t)*(∑ j ∈ Finset.range ((n-r)/30+1), E (30*(j:ℝ)*t))
+      rw [Finset.mul_sum]
+
+private def gridDistance (t : ℝ) := ‖GoldbachBudget.phase (30*t) - 1‖
+private def gridEnvelope (n : ℕ) (t : ℝ) :=
+  ((n:ℝ)+1)^2 / (1+((n:ℝ)+1)^2 * (gridDistance t)^2)
+
+private theorem phaseUnit (x : ℝ) : ‖GoldbachBudget.phase x‖ = 1 := by
+  simp [GoldbachBudget.phase, Complex.norm_exp]
+
+private theorem wheelDistanceBound (n : ℕ) (t : ℝ) :
+    ‖GoldbachBudget.spec n wheel t‖ * gridDistance t ≤ 60 := by
+  let z := GoldbachBudget.phase (30*t)
+  let R := (Finset.range 30).filter (fun r => Nat.Coprime r 30 ∧ r ≤ n)
+  let G := fun r : ℕ => GoldbachBudget.phase ((r:ℝ)*t) *
+    ∑ j ∈ Finset.range ((n-r)/30+1), GoldbachBudget.phase (30*(j:ℝ)*t)
+  have hz : ‖z‖ = 1 := phaseUnit _
+  have phasePow (j : ℕ) : GoldbachBudget.phase (30*(j:ℝ)*t) = z^j := by
+    dsimp [z,GoldbachBudget.phase]
+    rw [← Complex.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  have gb (r : ℕ) : ‖G r‖*gridDistance t ≤ 2 := by
+    simp only [G,gridDistance,norm_mul,phaseUnit,one_mul,phasePow]
+    change ‖∑ j ∈ Finset.range ((n-r)/30+1), z^j‖ * ‖z-1‖ ≤ 2
+    rw [← norm_mul, geom_sum_mul]
+    exact (norm_sub_le ..).trans (by simp [norm_pow,hz])
+  have card : R.card ≤ 8 := by
+    have hsub : R ⊆ (Finset.range 30).filter (fun r => Nat.Coprime r 30) := by
+      intro r hr
+      exact Finset.mem_filter.mpr ⟨(Finset.mem_filter.mp hr).1,(Finset.mem_filter.mp hr).2.1⟩
+    exact (Finset.card_le_card hsub).trans (by decide)
+  have whole : ‖∑ r ∈ R, G r‖ * gridDistance t ≤ 16 := by
+    calc
+      _ ≤ (∑ r ∈ R, ‖G r‖)*gridDistance t :=
+        mul_le_mul_of_nonneg_right (norm_sum_le ..) (norm_nonneg _)
+      _ = ∑ r ∈ R, ‖G r‖*gridDistance t := Finset.sum_mul ..
+      _ ≤ ∑ _r ∈ R, (2:ℝ) := Finset.sum_le_sum fun r _ => gb r
+      _ ≤ _ := by simp only [Finset.sum_const,nsmul_eq_mul]; linarith [show (R.card:ℝ) ≤ 8 by exact_mod_cast card]
+  have coeff : ‖((30:ℝ)/8:ℂ)‖ = 30/8 := by norm_num [norm_div]
+  rw [wheelGeometric, norm_mul, coeff, mul_assoc]
+  change (30/8:ℝ)*(‖∑ r ∈ R, G r‖ * gridDistance t) ≤ _
+  linarith only [whole]
+
+/-- A smooth, arithmetic-free upper bound valid even at the exact resonances. -/
+theorem wheelEnvelope (n : ℕ) (t : ℝ) :
+    ‖GoldbachBudget.spec n wheel t‖^2 ≤ 3616 * gridEnvelope n t := by
+  let S := ‖GoldbachBudget.spec n wheel t‖
+  let A := (n:ℝ)+1
+  let d := gridDistance t
+  have hS : 0 ≤ S := norm_nonneg _
+  have hA : 0 ≤ A := by dsimp [A]; positivity
+  have hd : 0 ≤ d := norm_nonneg _
+  have ht : S ≤ 4*A := by
+    calc
+      _ ≤ ∑ k ∈ Finset.range (n+1), ‖(wheel k:ℂ)*GoldbachBudget.phase ((k:ℝ)*t)‖ := norm_sum_le ..
+      _ ≤ ∑ _k ∈ Finset.range (n+1), (4:ℝ) := by
+        apply Finset.sum_le_sum
+        intro k _
+        rw [norm_mul,phaseUnit,mul_one,Complex.norm_real,Real.norm_eq_abs]
+        dsimp [wheel]; split <;> norm_num
+      _ = _ := by simp [A]; ring
+  have hsd : S*d ≤ 60 := wheelDistanceBound n t
+  have h1 := pow_le_pow_left₀ hS ht 2
+  have h2 := pow_le_pow_left₀ (mul_nonneg hS hd) hsd 2
+  change S^2 ≤ 3616*(A^2/(1+A^2*d^2))
+  rw [← mul_div_assoc]
+  apply (le_div_iff₀ (by positivity)).mpr
+  nlinarith only [h1,mul_le_mul_of_nonneg_left h2 (sq_nonneg A)]
+
+theorem wheelLeakageTransfer
+    (pointwise : ∀ n t, ‖GoldbachBudget.spec n wheel t‖^2 ≤ 3616 * gridEnvelope n t)
+    (leak : ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t) ≤ ε*(n:ℝ)) :
+    ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
+      (∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator (fun u => ‖GoldbachBudget.spec n wheel u‖^2) t)
+        ≤ ε*(n:ℝ) := by
+  intro ε hε
+  obtain ⟨N,hN⟩ := leak (ε/3616) (by positivity)
+  refine ⟨N, ?_⟩
+  intro n hn
+  have hg : Continuous (gridEnvelope n) := by
+    unfold gridEnvelope gridDistance GoldbachBudget.phase
+    fun_prop (disch := intro t; positivity)
+  have hs : Continuous (fun u => ‖GoldbachBudget.spec n wheel u‖^2) := by
+    unfold GoldbachBudget.spec GoldbachBudget.phase; fun_prop
+  have maskInt {f : ℝ → ℝ} (hc : Continuous f) :
+      IntervalIntegrable ((GoldbachBudget.arcs n)ᶜ.indicator f) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (hc.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator (GoldbachBudget.measurableArcs n).compl
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, 3616 * (GoldbachBudget.arcs n)ᶜ.indicator (gridEnvelope n) t := by
+      apply intervalIntegral.integral_mono_on (by norm_num) (maskInt hs) ((maskInt hg).const_mul 3616)
+      intro t _
+      by_cases ht : t ∈ (GoldbachBudget.arcs n)ᶜ
+      · simpa only [Set.indicator_of_mem ht] using pointwise n t
+      · simp [ht]
+    _ ≤ _ := by rw [intervalIntegral.integral_const_mul]; linarith only [hN n hn]
 
 end
 end GoldbachPacket

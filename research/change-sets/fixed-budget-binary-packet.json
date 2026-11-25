@@ -551,6 +551,60 @@
       "parallel": true,
       "assumptions": [],
       "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-wheel-smooth-envelope",
+      "statement": "let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let model := fun k : ℕ => if Nat.Coprime k 30 then (30:ℝ)/8 else 0; let D := fun (n : ℕ) (t : ℝ) => ((n:ℝ)+1)^2/(1+((n:ℝ)+1)^2*‖E (30*t)-1‖^2); ∀ (n : ℕ) (t : ℝ), ‖S n model t‖^2 ≤ 3616*D n t",
+      "plain_statement": {
+        "zh": "用光滑的模 30 周期函数控制模型频谱平方",
+        "en": "Dominate the model spectrum by a smooth period-1/30 envelope"
+      },
+      "brief": {
+        "zh": "八个几何和分别乘上相位差后至多为 2。用全局平凡上界覆盖精确共振点，得到处处有限的显式函数。",
+        "en": "Multiply each geometric sum by its phase difference, then combine the resulting cap with the global size bound. The envelope is finite at the exact resonances."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-wheel-grid-tail",
+      "statement": "let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let D := fun (n : ℕ) (t : ℝ) => ((n:ℝ)+1)^2/(1+((n:ℝ)+1)^2*‖E (30*t)-1‖^2); ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N, intervalIntegral ((arcs n)ᶜ.indicator (D n)) (0:ℝ) 1 MeasureTheory.volume ≤ ε*(n:ℝ)",
+      "plain_statement": {
+        "zh": "模 30 有理网格在冻结次弧上的积分尾部",
+        "en": "Integrate the smooth rational-grid tail on the frozen minor arcs"
+      },
+      "brief": {
+        "zh": "只含显式余弦相位和实际弧宽。充分大 n 时，每个 a/30 约分后分母至多 30，主弧包含宽度至少 Q/(30n) 的邻域。可按最近网格点分区，利用正弦下界并积分距离的倒数平方。",
+        "en": "The task contains no prime weights. For large n each reduced a/30 has a major-arc neighborhood of radius at least Q/(30n). Partition by the nearest grid point and integrate an inverse-square distance estimate."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-wheel-envelope-transfer",
+      "statement": "(let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let model := fun k : ℕ => if Nat.Coprime k 30 then (30:ℝ)/8 else 0; let D := fun (n : ℕ) (t : ℝ) => ((n:ℝ)+1)^2/(1+((n:ℝ)+1)^2*‖E (30*t)-1‖^2); ∀ (n : ℕ) (t : ℝ), ‖S n model t‖^2 ≤ 3616*D n t) → (let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let D := fun (n : ℕ) (t : ℝ) => ((n:ℝ)+1)^2/(1+((n:ℝ)+1)^2*‖E (30*t)-1‖^2); ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N, intervalIntegral ((arcs n)ᶜ.indicator (D n)) (0:ℝ) 1 MeasureTheory.volume ≤ ε*(n:ℝ)) → (let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let I := fun (n:ℕ) (a b:ℕ→ℝ) => intervalIntegral (fun t => (arcs n)ᶜ.indicator (fun u => S n a u*S n b u*E (-(n:ℝ)*u)) t) (0:ℝ) 1 MeasureTheory.volume; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let U := fun (n : ℕ) (a : ℕ → ℝ) => intervalIntegral ((B n).indicator (fun t => ‖S n a t‖^2)) (0:ℝ) 1 MeasureTheory.volume; let V := fun (n h : ℕ) => intervalIntegral ((B n).indicator (fun t => Real.cos (2*Real.pi*(h:ℝ)*t))) (0:ℝ) 1 MeasureTheory.volume; let A := fun (n h : ℕ) (a : ℕ → ℝ) => ∑ k ∈ Finset.range (n+1-h), a k * a (k+h); let model := fun k : ℕ => if Nat.Coprime k 30 then (30:ℝ)/8 else 0; let short := fun (n : ℕ) (a : ℕ → ℝ) => A n 0 a * V n 0 + 2*(∑ h ∈ Finset.Icc 1 (min n ((L n)^2)), A n h a * V n h); let long := fun (n : ℕ) (a : ℕ → ℝ) => 2*(∑ h ∈ Finset.Icc ((L n)^2+1) n, A n h a * V n h); ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N, intervalIntegral ((arcs n)ᶜ.indicator (fun t => ‖S n model t‖^2)) (0:ℝ) 1 MeasureTheory.volume ≤ ε*(n:ℝ))",
+      "plain_statement": {
+        "zh": "由网格尾部恢复周期模型的次弧估计",
+        "en": "Transfer the grid estimate back to model leakage"
+      },
+      "brief": {
+        "zh": "对同一个次弧作单调积分，网格预算取 ε/3616。",
+        "en": "Integrate the pointwise majorant on the same arcs with grid budget ε/3616."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
     }
   ],
   "links": [
@@ -727,6 +781,30 @@
       "explanation": {
         "zh": "分别对素数权与模型权应用；从长间距和剔除可随 n 选取的一组稀疏间距，两者的总损失可做到任意小的线性量。剩余带符号和仍需独立控制。",
         "en": "Apply separately to prime and wheel weights to discard any selected sparse family of long lags at arbitrarily small linear cost. The complementary signed sum needs independent control."
+      }
+    },
+    {
+      "kind": "input",
+      "inputs": [
+        "L-goldbach-packet-wheel-geometric"
+      ],
+      "output": "L-goldbach-packet-wheel-smooth-envelope",
+      "explanation": {
+        "zh": "对每个余数类使用有限几何和公式。",
+        "en": "Apply the finite geometric-sum formula in each class."
+      }
+    },
+    {
+      "kind": "sufficient_reduction",
+      "inputs": [
+        "L-goldbach-packet-wheel-smooth-envelope",
+        "L-goldbach-packet-wheel-grid-tail"
+      ],
+      "output": "L-goldbach-packet-wheel-minor-leakage",
+      "bridge": "L-goldbach-packet-wheel-envelope-transfer",
+      "explanation": {
+        "zh": "逐点上界和次弧网格积分预算在相同的 n 与截断上合成。",
+        "en": "Combine the pointwise envelope and its masked integral at the same n and cutoff."
       }
     }
   ],
