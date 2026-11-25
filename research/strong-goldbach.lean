@@ -2415,5 +2415,142 @@ theorem shortCentersFromModuli
     _ = 2*∑ q ∈ U, denominatorWeight n q := (Finset.mul_sum ..).symm
     _ ≤ ε := by linarith only [sm,lg,eq]
 
+
+/-- Prime factors witnessing short multiplicative order are sparse in reciprocal weight,
+even when counted repeatedly for different periods. -/
+theorem periodPrimeBudget (H Y : ℕ) (hY : 0<Y) :
+    (∑ j ∈ Finset.Icc 1 H, ∑ p ∈ ((2^j-1:ℕ).primeFactors.filter (fun p => Y<p)),
+      1/((p:ℝ)-1)) ≤ (H:ℝ)^2/Y := by
+  have one (j : ℕ) (hj : j ∈ Finset.Icc 1 H) :
+      (∑ p ∈ ((2^j-1:ℕ).primeFactors.filter (fun p => Y<p)), 1/((p:ℝ)-1)) ≤ (H:ℝ)/(Y:ℝ) := by
+    let M : ℕ := 2^j-1
+    let primes := M.primeFactors
+    let T := primes.filter (fun p => Y<p)
+    have jpos := (Finset.mem_Icc.mp hj).1
+    have jle := (Finset.mem_Icc.mp hj).2
+    have Mpos : 0<M := by
+      have two : 2 ≤ 2^j := by simpa using Nat.pow_le_pow_right (by decide : 0<2) jpos
+      dsimp [M]; omega
+    have hc : 2^primes.card ≤ M := by
+      calc
+        _ = ∏ _p ∈ primes, (2:ℕ) := by simp
+        _ ≤ ∏ p ∈ primes, p := Finset.prod_le_prod' (fun p h => (Nat.prime_of_mem_primeFactors h).two_le)
+        _ ≤ M := Nat.le_of_dvd Mpos (Nat.prod_primeFactors_dvd M)
+    have card : primes.card ≤ j := by
+      by_contra! hh
+      have lower := Nat.pow_le_pow_right (by decide : 0<2) (show j+1 ≤ primes.card by omega)
+      rw [pow_succ] at lower
+      dsimp [M] at hc
+      omega
+    have cr : (T.card:ℝ) ≤ (H:ℝ) := by exact_mod_cast
+      ((Finset.card_le_card (Finset.filter_subset _ primes)).trans card).trans jle
+    change (∑ p ∈ T, _) ≤ _
+    calc
+      _ ≤ ∑ _p ∈ T, 1/(Y:ℝ) := by
+        apply Finset.sum_le_sum
+        intro p hp
+        have hi : (Y:ℝ)+1 ≤ (p:ℝ) := by exact_mod_cast (Finset.mem_filter.mp hp).2
+        exact one_div_le_one_div_of_le (by positivity) (by linarith)
+      _ = (T.card:ℝ)/(Y:ℝ) := by simp [div_eq_mul_inv]
+      _ ≤ _ := by gcongr
+  calc
+    _ ≤ ∑ _j ∈ Finset.Icc 1 H, (H:ℝ)/(Y:ℝ) := Finset.sum_le_sum one
+    _ = _ := by simp [pow_two] <;> ring
+
+
+private theorem fractionProduct (S : Finset ℕ) (hs : ∀ p ∈ S, 2≤p) :
+    (∏ p ∈ S, (p:ℝ)/((p:ℝ)-1)) ≤ (S.card:ℝ)+1 := by
+  induction S using Finset.induction_on_max with
+  | empty => simp
+  | insert a S hmax ih =>
+    have ha := hs a (Finset.mem_insert_self ..)
+    have old (p : ℕ) (hp : p∈S) := hs p (Finset.mem_insert_of_mem hp)
+    have ha' : 0 < (a:ℝ)-1 := by have : (2:ℝ) ≤ a := by exact_mod_cast ha; linarith
+    have notMem : a ∉ S := fun h => (lt_irrefl a) (hmax a h)
+    have sub : S ⊆ Finset.Ico 2 a := fun p hp => Finset.mem_Ico.mpr ⟨old p hp,hmax p hp⟩
+    have count := Finset.card_le_card sub
+    rw [Nat.card_Ico] at count
+    have cr : (S.card:ℝ)+2 ≤ (a:ℝ) := by exact_mod_cast (show S.card+2≤a by omega)
+    rw [Finset.prod_insert notMem,Finset.card_insert_of_notMem notMem,Nat.cast_add,Nat.cast_one]
+    apply (mul_le_mul_of_nonneg_left (ih old) (div_nonneg (Nat.cast_nonneg _) ha'.le)).trans
+    rw [div_mul_eq_mul_div]
+    apply (div_le_iff₀ ha').mpr
+    linarith
+
+private theorem totientLogLower (q : ℕ) (hq : 0<q) :
+    (q:ℝ)/(q.totient:ℝ) ≤ (Nat.log 2 q:ℝ)+1 := by
+  let S := q.primeFactors
+  have hs (p : ℕ) (hp : p∈S) := (Nat.prime_of_mem_primeFactors hp).two_le
+  have card : S.card ≤ Nat.log 2 q := by
+    apply Nat.le_log_of_pow_le (by decide)
+    calc
+      _ = ∏ _p ∈ S, (2:ℕ) := by simp
+      _ ≤ ∏ p ∈ S, p := Finset.prod_le_prod' hs
+      _ ≤ q := Nat.le_of_dvd hq (Nat.prod_primeFactors_dvd q)
+  have hf : 0 < (q.totient:ℝ) := by exact_mod_cast Nat.totient_pos.mpr hq
+  have id : (q:ℝ)/(q.totient:ℝ) = ∏ p ∈ S, (p:ℝ)/((p:ℝ)-1) := by
+    rw [Finset.prod_div_distrib]
+    have pos : 0 < ∏ p ∈ S, ((p:ℝ)-1) := Finset.prod_pos (fun p hp => by
+      have h : (2:ℝ)≤p := by exact_mod_cast hs p hp
+      linarith)
+    apply (div_eq_div_iff hf.ne' pos.ne').mpr
+    have formula : (q.totient:ℝ)*(∏ p ∈ S, (p:ℝ)) =
+        (q:ℝ)*∏ p ∈ S, ((p-1:ℕ):ℝ) := by exact_mod_cast Nat.totient_mul_prod_primeFactors q
+    rw [formula]
+    congr 1
+    apply Finset.prod_congr rfl
+    intro p hp
+    rw [Nat.cast_sub (by have h := hs p hp; omega),Nat.cast_one]
+  rw [id]
+  exact (fractionProduct S hs).trans (by exact_mod_cast (show S.card+1≤Nat.log 2 q+1 by omega))
+
+private theorem harmonicBlock (k : ℕ) :
+    (∑ m ∈ Finset.range (2^k), 1/((m:ℝ)+1)) ≤ (k:ℝ)+1 := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ, Nat.mul_two, Finset.sum_range_add]
+    have block : (∑ j ∈ Finset.range (2^k), 1/(((2^k+j:ℕ):ℝ)+1)) ≤ 1 := by
+      calc
+        _ ≤ ∑ _j ∈ Finset.range (2^k), 1/((2:ℝ)^k) := by
+          apply Finset.sum_le_sum
+          intro j _
+          apply one_div_le_one_div_of_le (by positivity)
+          push_cast; linarith [Nat.cast_nonneg (α := ℝ) j]
+        _ = _ := by simp
+    push_cast
+    linarith only [ih,block]
+
+theorem reciprocalTotientLogBound (X : ℕ) (hX : 0<X) :
+    (∑ m ∈ Finset.Icc 1 X, 1/(m.totient:ℝ)) ≤ ((Nat.log 2 X:ℝ)+2)^2 := by
+  let k := Nat.log 2 X
+  have idx : Finset.Icc 1 X = (Finset.range X).map (addRightEmbedding 1) := by
+    ext m
+    simp only [Finset.mem_Icc,Finset.mem_map,Finset.mem_range,addRightEmbedding_apply]
+    constructor
+    · intro h; exact ⟨m-1,by omega,by omega⟩
+    · rintro ⟨j,h,rfl⟩; omega
+  have upper := (Nat.lt_pow_succ_log_self (by decide : 1<2) X).le
+  have harm : (∑ m ∈ Finset.range X, 1/((m:ℝ)+1)) ≤ (k:ℝ)+2 := by
+    apply (Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono upper) (fun m _ _ => by positivity)).trans
+    simpa [k,add_assoc] using harmonicBlock (k+1)
+  rw [idx,Finset.sum_map]
+  calc
+    _ ≤ ∑ j ∈ Finset.range X, ((k:ℝ)+1)*(1/((j:ℝ)+1)) := by
+      apply Finset.sum_le_sum
+      intro j hj
+      have le : j+1 ≤ X := Finset.mem_range.mp hj
+      have hk : Nat.log 2 (j+1) ≤ k := Nat.log_mono_right le
+      have b := totientLogLower (j+1) (by omega)
+      have h : (((j+1:ℕ):ℝ)/((j+1).totient:ℝ)) ≤ (k:ℝ)+1 := b.trans (by exact_mod_cast (Nat.add_le_add_right hk 1))
+      change 1/((j+1).totient:ℝ) ≤ _
+      rw [mul_one_div]
+      apply (le_div_iff₀ (by positivity)).mpr
+      push_cast at h
+      linarith only [h]
+    _ = ((k:ℝ)+1)*_ := (Finset.mul_sum ..).symm
+    _ ≤ ((k:ℝ)+1)*((k:ℝ)+2) := mul_le_mul_of_nonneg_left harm (by positivity)
+    _ ≤ _ := by dsimp [k]; nlinarith only [Nat.cast_nonneg (α := ℝ) (Nat.log 2 X)]
+
 end
 end GoldbachPacket
