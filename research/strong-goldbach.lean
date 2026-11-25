@@ -1422,6 +1422,7 @@ theorem deepFloorBudget : ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N,
       apply intervalIntegral.integral_mono_on (by norm_num)
         (onRegion (hd.diff hp) (continuousDensity n)) ((onRegion hb continuous_const).const_mul _)
       intro t _
+      change (deep n \ spikes n).indicator (density n) t ≤ ceilingEnergy n * f t
       by_cases ht : t ∈ deep n \ spikes n
       · have hh := ht.1.1
         have hle : density n t ≤ ceilingEnergy n := le_of_not_gt ht.2
@@ -1469,32 +1470,32 @@ theorem divisorMixtureLeakage (n R : ℕ) (c : ℕ → ℝ) (M : ℕ → ℕ) (h
   let v := fun d => (GoldbachBudget.arcs n)ᶜ.indicator (f d)
   have hb : 0 ≤ b := Finset.sum_nonneg fun _ _ => abs_nonneg _
   have hc (d : ℕ) : Continuous (f d) := by unfold f progression GoldbachBudget.phase; fun_prop
-  have hv (d : ℕ) : IntervalIntegrable (fun t => |c d|*v d t) MeasureTheory.volume (0:ℝ) 1 :=
+  have hv (d : ℕ) : IntervalIntegrable (fun t => |c d| * v d t) MeasureTheory.volume (0:ℝ) 1 :=
     (minorIntegrable n (hc d)).const_mul _
-  have hs : IntervalIntegrable (fun t => ∑ d ∈ T, |c d|*v d t) MeasureTheory.volume (0:ℝ) 1 := by
-    have eq : (fun t => ∑ d ∈ T, |c d|*v d t) = ∑ d ∈ T, (fun t => |c d|*v d t) := by funext t; simp
+  have hs : IntervalIntegrable (fun t => ∑ d ∈ T, |c d| * v d t) MeasureTheory.volume (0:ℝ) 1 := by
+    have eq : (fun t => ∑ d ∈ T, |c d| * v d t) = ∑ d ∈ T, (fun t => |c d| * v d t) := by funext t; simp
     rw [eq]
     exact IntervalIntegrable.sum T (fun d _ => hv d)
   have hmix : Continuous (fun t => ‖mixture R c M t‖^2) := by
     unfold mixture progression GoldbachBudget.phase; fun_prop
   let K := 2*Real.pi*(n:ℝ)/(gridQ n:ℝ)
   calc
-    _ ≤ ∫ t in (0:ℝ)..1, b * (∑ d ∈ T, |c d|*v d t) := by
+    _ ≤ ∫ t in (0:ℝ)..1, b * (∑ d ∈ T, |c d| * v d t) := by
       apply intervalIntegral.integral_mono_on (by norm_num) (minorIntegrable n hmix) (hs.const_mul b)
       intro t _
       by_cases ht : t ∈ (GoldbachBudget.arcs n)ᶜ
       · simp only [v,Set.indicator_of_mem ht]
-        have htriangle : ‖mixture R c M t‖ ≤ ∑ d ∈ T, |c d|*‖progression d (M d) t‖ := by
+        have htriangle : ‖mixture R c M t‖ ≤ ∑ d ∈ T, |c d| * ‖progression d (M d) t‖ := by
           simpa only [mixture,T,norm_mul,Complex.norm_real,Real.norm_eq_abs] using
             (norm_sum_le T (fun d => (c d:ℂ)*progression d (M d) t))
         apply (pow_le_pow_left₀ (norm_nonneg _) htriangle 2).trans
         exact Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul T (fun d _ => abs_nonneg (c d))
           (fun d _ => mul_nonneg (abs_nonneg _) (sq_nonneg _)) (fun d _ => by dsimp [f]; nlinarith only [])
       · simp [v,ht]
-    _ = b * ∑ d ∈ T, |c d|*minorMass n (f d) := by
+    _ = b * ∑ d ∈ T, |c d| * minorMass n (f d) := by
       rw [intervalIntegral.integral_const_mul,intervalIntegral.integral_finsetSum (fun d _ => hv d)]
       simp only [intervalIntegral.integral_const_mul,minorMass,v]
-    _ ≤ b * ∑ d ∈ T, |c d|*K := by
+    _ ≤ b * ∑ d ∈ T, |c d| * K := by
       apply mul_le_mul_of_nonneg_left _ hb
       apply Finset.sum_le_sum
       intro d hd
@@ -1531,11 +1532,11 @@ theorem shellFromModel (slow : Bool)
   have sub : s ⊆ w := by cases slow <;> exact fun _ ht => ht.1.2
   have hc : Continuous (peaks n) := by
     unfold peaks
-    apply continuous_finset_sum
+    apply continuous_finsetSum
     intro q hq
     have hq' : 0<q := (Finset.mem_Icc.mp hq).1
     have hp := Nat.totient_pos.mpr hq'
-    apply continuous_finset_sum
+    apply continuous_finsetSum
     intro a _
     apply Continuous.div <;> first | fun_prop | intro t; positivity
   have hx : Continuous (excess n) := continuous_const.max ((continuousDensity n).sub hc)
@@ -1546,6 +1547,7 @@ theorem shellFromModel (slow : Bool)
     apply intervalIntegral.integral_mono_on (by norm_num) (onRegion hs (continuousDensity n))
       ((onRegion hs hc).add (onRegion hw hx))
     intro t _
+    change s.indicator (density n) t ≤ s.indicator (peaks n) t + w.indicator (excess n) t
     by_cases ht : t ∈ s
     · simp only [Set.indicator_of_mem ht,Set.indicator_of_mem (sub ht)]
       dsimp [excess]
