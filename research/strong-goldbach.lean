@@ -230,6 +230,37 @@ theorem packetToBulk
   rw [split]
   linarith only [hP n (by omega) he, hD n (by omega) he]
 
+/-- Compare two exact lag expansions on a common mask before using the budgets. -/
+theorem energyFromLags {U short long : ℕ → (ℕ → ℝ) → ℝ}
+    (expand : ∀ n a, U n a = short n a + long n a)
+    (wheel : ∃ N : ℕ, ∀ n ≥ N, Even n →
+      U n (fun k => if Nat.Coprime k 30 then (30:ℝ)/8 else 0) ≤ (n:ℝ)/2304)
+    (near : ∃ N : ℕ, ∀ n ≥ N, Even n →
+      |short n (high n) - short n (fun k => if Nat.Coprime k 30 then (30:ℝ)/8 else 0)| ≤ (n:ℝ)/2304)
+    (far : ∃ N : ℕ, ∀ n ≥ N, Even n →
+      long n (high n) - long n (fun k => if Nat.Coprime k 30 then (30:ℝ)/8 else 0) ≤ (n:ℝ)/1152) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → U n (high n) ≤ (n:ℝ)/576 := by
+  obtain ⟨A,hA⟩ := wheel
+  obtain ⟨B,hB⟩ := near
+  obtain ⟨C,hC⟩ := far
+  refine ⟨max A (max B C), ?_⟩
+  intro n hn he
+  have hw := hA n (by omega) he
+  rw [expand] at hw ⊢
+  linarith only [hw, (abs_le.mp (hB n (by omega) he)).2, hC n (by omega) he]
+
+/-- A signed capped-packet floor and a positive masked-energy cap suffice. -/
+theorem packetFromCapped {U : ℕ → ℝ}
+    (cap : ∃ N : ℕ, ∀ n ≥ N, Even n → -(n:ℝ)/1152 ≤ J n (fun t => min (K n t) (1/2)))
+    (energy : ∃ N : ℕ, ∀ n ≥ N, Even n → U n ≤ (n:ℝ)/576)
+    (compareCap : ∀ n, J n (fun t => min (K n t) (1/2)) - U n/2 ≤ J n (K n)) :
+    ∃ N : ℕ, ∀ n ≥ N, Even n → -(n:ℝ)/576 ≤ J n (K n) := by
+  obtain ⟨A,hA⟩ := cap
+  obtain ⟨B,hB⟩ := energy
+  refine ⟨max A B, ?_⟩
+  intro n hn he
+  linarith only [hA n (by omega) he, hB n (by omega) he, compareCap n]
+
 /-- The finite certificate must reach the very threshold supplied by the analytic bounds. -/
 theorem completeAtCommonCutoff (N : ℕ) (c : ℝ) (hc : 0 < c)
     (prefixMass : ∀ n : ℕ, 4 ≤ n → n < N → Even n → 0 < mass n)

@@ -63,6 +63,8 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-energy-from-lags": "GoldbachBudget.energyFromLags",
+              "L-goldbach-packet-from-capped-energy": "GoldbachBudget.packetFromCapped",
               "L-goldbach-bulk-energy-to-clipped": "GoldbachBudget.clippedBound",
               "L-goldbach-bulk-off-coherence-transfer": "GoldbachBudget.restToDefect",
               "L-goldbach-bulk-binary-partition": "GoldbachBudget.packetPartition",
