@@ -10,6 +10,7 @@ import ssl
 import time
 from contextlib import closing
 from datetime import datetime
+from functools import lru_cache
 from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -87,6 +88,11 @@ ASSETS = {
     "/join-zh.txt": "text/plain",
 }
 
+@lru_cache(maxsize=16)
+def compressed_asset(content):
+    return gzip.compress(content, compresslevel=6, mtime=0)
+
+
 DISCUSSION_EXPIRES = datetime.fromisoformat("2026-12-02T00:00:00+08:00")
 
 
@@ -102,7 +108,7 @@ def discussion_widget(lang, prefix):
     alt = "知乎 AI4S 讨论组（哥猜 3 群）微信群二维码" if zh else "WeChat QR code for the Zhihu AI4S Goldbach discussion group 3"
     return f"""<details class="discussion-widget" id="wechat-discussion" name="research-qr" aria-label="{name}"><summary><img class="wechat-mark" src="{prefix}wechat.svg" width="34" height="34" alt="">{label}<span aria-hidden="true"></span></summary>
 <div class="discussion-body"><strong>{name}</strong><p>{instructions}</p>
-<div class="discussion-code"><img src="{prefix}discussion-qr.png" alt="{alt}" width="800" height="1198"></div>
+<div class="discussion-code"><img loading="lazy" src="{prefix}discussion-qr.png" alt="{alt}" width="800" height="1198"></div>
 <small>{validity}</small></div></details>"""
 
 
@@ -123,7 +129,7 @@ def core_team_signup(lang, prefix):
 <summary>{title}<span aria-hidden="true"></span></summary>
 <div class="core-team-signup"><p>{intro}</p>
 <p><strong>{research}</strong> {development}</p>
-<figure><img src="{prefix}core-team-signup.png" width="176" height="176" alt="{caption}">
+<figure><img loading="lazy" src="{prefix}core-team-signup.png" width="176" height="176" alt="{caption}">
 <figcaption>{caption}</figcaption></figure></div></details>"""
 
 
@@ -224,6 +230,10 @@ WEB_SNAPSHOTS = {}
 
 
 def status_body(desk, web_view):
+    # A cache hit for one desk need not wait for another desk to build its snapshot.
+    cached = WEB_SNAPSHOTS.get(desk) if web_view else None
+    if cached and cached[0] > time.monotonic():
+        return cached[1]
     with STATUS_BUILD:
         if web_view:
             cached = WEB_SNAPSHOTS.get(desk)
@@ -549,7 +559,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def reply(self, status, body, content_type="application/json", language=None, encoding=None):
+    def reply(self, status, body, content_type="application/json", language=None, encoding=None, static=False):
         if status == 200 and self.command == "GET" and content_type == "text/html":
             try:
                 with closing(sqlite3.connect(PAGE_VIEWS_DB)) as conn, conn:
@@ -565,9 +575,11 @@ class Handler(BaseHTTPRequestHandler):
         if content_type == "application/json" or content_type.startswith("text/"):
             content_type += "; charset=utf-8"
         self.send_header("Content-Type", content_type)
+        if static:
+            self.send_header("Vary", "Accept-Encoding")
         if encoding:
             self.send_header("Content-Encoding", encoding)
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", "public, max-age=300" if static else "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
         if language:
@@ -707,7 +719,14 @@ class Handler(BaseHTTPRequestHandler):
                     PUBLIC_SITE + "#records", f"{PUBLIC_SITE}problems/{slug}/?lang={lang}#records"
                 )
                 content = f"{title}\n\n{introduction}\n\n{instructions}".encode()
-            return self.reply(200, content, ASSETS[path])
+            mime = ASSETS[path]
+            static = mime != "text/plain"
+            encoding = None
+            if static and mime in {"text/css", "text/javascript", "image/svg+xml"}:
+                encodings = self.headers.get("Accept-Encoding", "").lower().split(",")
+                if "gzip" in (token.strip() for token in encodings):
+                    content, encoding = compressed_asset(content), "gzip"
+            return self.reply(200, content, mime, encoding=encoding, static=static)
         if path != "/":
             return self.reply(404, b'{}')
         lang = self.language(url)
