@@ -414,9 +414,10 @@ class Desk:
                 WHERE verdict = 'ACCEPTED' AND run_id IS NOT NULL AND finished_at <= ?
             )
             SELECT model, harness FROM accepted WHERE position = 1
+                AND (model != 'unknown' OR harness != 'unknown')
         """, (now,)).fetchall()
         def ranking(column):
-            counts = Counter(row[column] for row in winners)
+            counts = Counter(row[column] for row in winners if row[column] != "unknown")
             return [{"name": name, "accepted": count} for name, count in
                     sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))]
         return {"models": ranking(0), "harnesses": ranking(1), "proofs": len(winners)}
