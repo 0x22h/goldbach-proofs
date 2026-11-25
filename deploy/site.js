@@ -48,6 +48,7 @@ const strings = {
     file: '证明文件',
     copyLemma: '复制这条引理的参与提示词',
     occupied: '这条引理当前正在处理。',
+    closed: '已停止新领取', challenge: '仅按 ID 挑战',
     alreadyVerified: '这条引理已通过权威验证。',
     lemmaPrompt: id => '读取 ' + guideUrl + '，按指南用 ' + claimCommand + ' ' + id + ' 领取并验证这一条引理。如果无法领取这条引理，请说明原因，不要改领其他题。'
   },
@@ -84,6 +85,7 @@ const strings = {
     file: 'Proof file',
     copyLemma: 'Copy this lemma’s join prompt',
     occupied: 'This lemma is currently in progress.',
+    closed: 'Closed to new claims', challenge: 'Challenge by ID',
     alreadyVerified: 'The authoritative verifier has accepted this lemma.',
     lemmaPrompt: id => 'Read ' + guideUrl + ' and follow it to claim and verify exactly ' + id + ' with ' + claimCommand + ' ' + id + '. If that lemma is unavailable, report why and do not choose another.'
   }
@@ -180,11 +182,12 @@ function gapStatus(gap) {
   if (assigned(gap)) {
     return { label: strings.assignments[assignments[gap.id]], kind: 'occupied', style: 'in-progress' };
   }
-  return { label: strings.open, kind: 'available', style: '' };
+  if (gap.claims_closed) return { label: strings.closed, kind: 'closed', style: '' };
+  return { label: gap.challenge_only ? strings.challenge : strings.open, kind: 'available', style: '' };
 }
 
 function canClaim(gap) {
-  return !gap.proved && (!assigned(gap) || gap.parallel === true);
+  return !gap.claims_closed && !gap.proved && (!assigned(gap) || gap.parallel === true);
 }
 
 function renderProgramCounts() {
@@ -276,8 +279,8 @@ function renderGapDetail() {
     target: lang === 'zh' ? '待突破的解析估计' : 'Open analytic target',
     conditional: lang === 'zh' ? '需使用命题中所列假设' : 'Conditional on the stated hypotheses'
   }[gap.role];
-  const challenge = gap.challenge_only && (lang === 'zh' ? '核心开放难题 · 仅按 ID 主动挑战' : 'Open research challenge · claim explicitly by ID');
-  const context = [programName(programOf(gap)), role, challenge].filter(Boolean).join(' · ');
+  const manual = assigned(gap) && gap.challenge_only && !gap.claims_closed && strings.challenge;
+  const context = [programName(programOf(gap)), role, manual].filter(Boolean).join(' · ');
   detailContent.replaceChildren(
     identity,
     element('h3', gap.plain_statement[lang]),
@@ -287,7 +290,7 @@ function renderGapDetail() {
 
   if (gap.brief?.[lang]) detailContent.append(element('p', gap.brief[lang], 'detail-context'));
   if (gap.source) detailContent.append(anchor(lang === 'zh' ? '阅读来源 ↗' : 'Read the source ↗', gap.source, 'evidence-link'));
-  if (!gap.proved && gap.parallel) detailContent.append(element('p',
+  if (canClaim(gap) && gap.parallel) detailContent.append(element('p',
     lang === 'zh' ? '此问题开放给多个参与者独立试证。' : 'This problem accepts independent proof attempts in parallel.', 'detail-context'));
   if (gap.file) {
     const file = element('p', undefined, 'detail-file');
@@ -298,7 +301,10 @@ function renderGapDetail() {
     detailContent.append(runLink(gap.latest, strings.latestRun));
   }
   if (!canClaim(gap)) {
-    detailContent.append(element('p', gap.proved ? strings.alreadyVerified : strings.occupied, 'detail-context'));
+    if (gap.proved || assigned(gap)) {
+      const reason = gap.proved ? strings.alreadyVerified : (gap.claims_closed ? strings.closed : strings.occupied);
+      detailContent.append(element('p', reason, 'detail-context'));
+    }
     return;
   }
   const join = element('div', undefined, 'detail-join');
@@ -351,7 +357,7 @@ function mapNode(gap) {
 }
 
 const graph = document.getElementById('network-map');
-const palette = { available: '#aebcaf', occupied: '#f2be63', verified: '#9cdaa2' };
+const palette = { available: '#aebcaf', occupied: '#f2be63', closed: '#8b8990', verified: '#9cdaa2' };
 const programPalette = { foundation: '#a0c6a1', grh: '#ebc883', correlation: '#9ab9d7', exceptions: '#c4acd7' };
 let graphGaps = [];
 let graphTargets = [];

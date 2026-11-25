@@ -502,6 +502,7 @@ main > .sponsor-wall { width: 100%; margin-top: 1.25rem; }
 .map-legend li,.map-node { display:inline-flex; align-items:center; gap:.4rem; }
 .map-dot { width:.65rem; height:.65rem; border:1px dashed #74786c; border-radius:50%; display:inline-block; flex:none; }
 .map-dot.verified { background:#568362; border:1px solid #436f50; }
+.map-dot.closed { background:#8b8990; border-style:solid; }
 .map-dot.occupied { background:#edb454; border:1px solid #966719; }
 .map-note { margin-top:.4rem; font-size:.83rem; color:var(--muted); }
 .map-nodes { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.75rem; }
