@@ -2552,7 +2552,7 @@ theorem reciprocalTotientLogBound (X : ℕ) (hX : 0<X) :
       rw [mul_one_div]
       apply (le_div_iff₀ (by positivity)).mpr
       push_cast at h
-      simpa only [one_div,div_eq_mul_inv,mul_comm] using h
+      simpa only [one_div,div_eq_mul_inv,one_mul,mul_one,mul_comm] using h
     _ = ((k:ℝ)+1)*_ := (Finset.mul_sum ..).symm
     _ ≤ ((k:ℝ)+1)*((k:ℝ)+2) := mul_le_mul_of_nonneg_left harm (by positivity)
     _ ≤ _ := by dsimp [k]; nlinarith only [Nat.cast_nonneg (α := ℝ) (Nat.log 2 X)]
@@ -2598,7 +2598,7 @@ private theorem largePeriodWeightFinite (n : ℕ) :
     have h := (Finset.mem_product.mp (Finset.mem_sigma.mp ha).2).1
     have hp := (Nat.prime_of_mem_primeFactors (Finset.mem_filter.mp h).1).two_le
     have hp' : (2:ℝ)≤a.2.1 := by exact_mod_cast hp
-    dsimp [v]; positivity
+    exact mul_nonneg (one_div_nonneg.mpr (by linarith)) (one_div_nonneg.mpr (Nat.cast_nonneg _))
   have witnesses (q : ℕ) (hq : q∈S) : ∃ a∈T, a.2.1*a.2.2=q ∧ denominatorWeight n q≤v a := by
     obtain ⟨hd,hshort,hnsm⟩ := Finset.mem_filter.mp hq
     change ¬∀ p ∈ q.primeFactors, p≤Y at hnsm
@@ -2627,10 +2627,10 @@ private theorem largePeriodWeightFinite (n : ℕ) :
     calc
       _ ≤ 1/(q.totient:ℝ) := div_le_div_of_nonneg_right (min_le_left ..) phiq.le
       _ ≤ 1/((p.totient:ℝ)*(m.totient:ℝ)) := one_div_le_one_div_of_le (mul_pos phip phim) phi
-      _ = _ := by dsimp [v]; rw [primeId]; ring
+      _ = _ := by dsimp [v]; rw [primeId]; simp only [one_div,mul_inv_rev,mul_comm]
   have eq : (∑ a ∈ T, v a) = M*(∑ j ∈ J, ∑ p ∈ Ps j, 1/((p:ℝ)-1)) := by
     dsimp only [T]
-    rw [Finset.sum_sigma',Finset.mul_sum]
+    rw [Finset.sum_sigma,Finset.mul_sum]
     apply Finset.sum_congr rfl
     intro j hj
     rw [Finset.sum_product,Finset.mul_sum]
