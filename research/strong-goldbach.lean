@@ -980,7 +980,7 @@ private theorem wheelDistanceBound (n : ℕ) (t : ℝ) :
     simp only [G,gridDistance,norm_mul,phaseUnit,one_mul,phasePow]
     change ‖∑ j ∈ Finset.range ((n-r)/30+1), z^j‖ * ‖z-1‖ ≤ 2
     rw [← norm_mul, geom_sum_mul]
-    exact (norm_sub_le ..).trans (by simp [norm_pow,hz])
+    exact (norm_sub_le ..).trans (by norm_num [norm_pow,hz])
   have card : R.card ≤ 8 := by
     have hsub : R ⊆ (Finset.range 30).filter (fun r => Nat.Coprime r 30) := by
       intro r hr
