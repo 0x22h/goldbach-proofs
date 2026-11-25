@@ -63,6 +63,7 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-sparse-lag-budget": "GoldbachPacket.sparseLagBudget",
               "L-goldbach-packet-even-lag-support": "GoldbachPacket.evenLagSupport",
               "L-goldbach-packet-short-lag-envelope": "GoldbachPacket.shortEnvelope",
               "L-goldbach-packet-short-wheel-error": "GoldbachPacket.shortWheelBudget",

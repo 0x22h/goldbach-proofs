@@ -716,5 +716,45 @@ theorem shortWheelBudget :
   obtain ⟨N,hN⟩ := shortWheelSublinear (1/2304) (by norm_num)
   exact ⟨N, fun n hn _ => by linarith only [hN n hn]⟩
 
+/-- Any chosen set of lags of this cardinality has sublinear absolute contribution.
+    No restriction on the positions of the selected lags is needed. -/
+theorem sparseLagBudget (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, ∀ (F : Finset ℕ) (a : ℕ → ℝ),
+      (F.card:ℝ) ≤ Real.exp ((length n:ℝ)/16) →
+      (∀ k ≤ n, |a k| ≤ 4*(1+Real.log (n:ℝ))) →
+      (∑ h ∈ F, |correlation n h a * cosineMoment n h|) ≤ ε*(n:ℝ) := by
+  obtain ⟨N,hN⟩ := maskLogDecay 4 ((ε/32)^2) (by positivity)
+  refine ⟨max 1 N, ?_⟩
+  intro n hn F a hF ha
+  let x := 1+Real.log (n:ℝ)
+  let v := cosineMoment n 0
+  have hn1 : (1:ℝ) ≤ n := by exact_mod_cast (show 1 ≤ n by omega)
+  have hx : 0 ≤ x := by dsimp [x]; linarith [Real.log_nonneg hn1]
+  have hv : 0 ≤ v := (abs_nonneg _).trans (cosineMomentBound n 0)
+  have area := hN n (by omega)
+  rw [← zeroMoment] at area
+  change x^4*v ≤ (ε/32)^2 at area
+  have decay : v ≤ Real.exp (-(length n:ℝ)/8) := (zeroMoment n).le.trans (maskedArea n)
+  have count : (F.card:ℝ)^2*v ≤ 1 := by
+    calc
+      _ ≤ (Real.exp ((length n:ℝ)/16))^2 * Real.exp (-(length n:ℝ)/8) :=
+        mul_le_mul (pow_le_pow_left₀ (by positivity) hF 2) decay hv (by positivity)
+      _ = 1 := by rw [pow_two, ← Real.exp_add, ← Real.exp_add]; ring_nf; simp
+  have sq : ((F.card:ℝ)*x^2*v)^2 ≤ (ε/32)^2 := by
+    calc
+      _ = ((F.card:ℝ)^2*v)*(x^4*v) := by ring
+      _ ≤ 1*(ε/32)^2 := mul_le_mul count area (mul_nonneg (by positivity) hv) zero_le_one
+      _ = _ := one_mul _
+  have small : (F.card:ℝ)*x^2*v ≤ ε/32 := (sq_le_sq₀ (by positivity) (by positivity)).mp sq
+  have uniform (h : ℕ) : |correlation n h a * cosineMoment n h| ≤ ((n:ℝ)+1)*(4*x)^2*v := by
+    rw [abs_mul]
+    exact mul_le_mul (correlationBound n h a (4*x) (by positivity) ha) (cosineMomentBound n h)
+      (abs_nonneg _) (by positivity)
+  calc
+    _ ≤ ∑ _h ∈ F, ((n:ℝ)+1)*(4*x)^2*v := Finset.sum_le_sum fun h _ => uniform h
+    _ = (16*((n:ℝ)+1))*((F.card:ℝ)*x^2*v) := by simp; ring
+    _ ≤ (32*(n:ℝ))*(ε/32) := mul_le_mul (by linarith) small (by positivity) (by positivity)
+    _ = _ := by ring
+
 end
 end GoldbachPacket
