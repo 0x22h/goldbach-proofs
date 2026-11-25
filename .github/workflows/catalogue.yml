@@ -92,6 +92,11 @@ jobs:
               if gap["id"] in reductions:
                   lines.append(f"example : ({gap['statement']}) := {reductions.pop(gap['id'])}")
           assert not reductions, f"Missing catalogue reductions: {reductions}"
+          # All other inputs of the lag-to-energy reduction now have proofs in the reference file.
+          frozen = {gap["id"]: gap["statement"] for gap in gaps}
+          far = frozen["L-goldbach-packet-long-wheel-excess"]
+          energy = frozen["L-goldbach-packet-resonant-prime-energy"]
+          lines.append(f"example : ({far}) → ({energy}) := GoldbachPacket.maskedEnergyFromLong")
           (Path(os.environ["RUNNER_TEMP"]) / "Catalogue.lean").write_text("\n".join(lines) + "\n")
           print(f"Type-checking {len(gaps)} propositions")
           PY
