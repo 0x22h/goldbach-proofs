@@ -1822,7 +1822,7 @@ theorem mangoldtSpectralError (n : ℕ) (hn : 1 ≤ n) (t : ℝ) :
   have main (k : ℕ) : |Λ k-hi k| = (Λ k-w k)+lo k := by
     have eq : Λ k-hi k = (Λ k-w k)+lo k := by dsimp [hi,GoldbachBudget.high,lo,w]; ring
     rw [eq,abs_of_nonneg (add_nonneg (dpos k) (lpos k))]
-  have ri : R = Finset.Icc 0 n := by ext k; simp [R]; omega
+  have ri : R = Finset.Icc 0 n := by ext k; simp [R]
   have hh : (∑ k ∈ R, (Λ k - w k)) = Chebyshev.psi (n:ℝ)-Chebyshev.theta (n:ℝ) := by
     rw [Finset.sum_sub_distrib,Chebyshev.psi_eq_sum_Icc,Chebyshev.theta_eq_sum_Icc,
       Finset.sum_filter,Nat.floor_natCast,ri]
@@ -1847,8 +1847,7 @@ theorem mangoldtSpectralError (n : ℕ) (hn : 1 ≤ n) (t : ℝ) :
       · exact hlog
     have hr : (n.sqrt:ℝ) ≤ Real.sqrt (n:ℝ) := by
       have hsq : (n.sqrt:ℝ)*(n.sqrt:ℝ) ≤ (n:ℝ) := by exact_mod_cast Nat.sqrt_le n
-      nlinarith [Real.sq_sqrt (Nat.cast_nonneg (α := ℝ) n),Real.sqrt_nonneg (n:ℝ),
-        Nat.cast_nonneg (α := ℝ) n.sqrt,sq_nonneg ((n.sqrt:ℝ)-Real.sqrt (n:ℝ))]
+      exact Real.le_sqrt_of_sq_le (by simpa only [pow_two] using hsq)
     have h1 := Real.one_le_sqrt.mpr hn'
     rw [eq]
     calc

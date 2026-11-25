@@ -1,7 +1,7 @@
 {
   "version": 1,
   "problem": "goldbach",
-  "base_revision": "4039642ae8d0088b6fc4bc3ca0dfcd7350e2a23c",
+  "base_revision": "026a6c906e6e39979d628ac71ec16a0b9871576c",
   "request_id": "fixed-budget-binary-packet",
   "parent": {
     "id": "L-goldbach-dyadic-correlation-floor",
@@ -983,6 +983,78 @@
       "parallel": true,
       "assumptions": [],
       "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-mangoldt-uniform-spectral-error",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let d := fun (n : ℕ) (t : ℝ) => ‖S n (fun k => ArithmeticFunction.vonMangoldt k) t - S n (high n) t‖; ∀ n : ℕ, 1 ≤ n → ∀ t : ℝ, d n t ≤ 4*Real.sqrt (n:ℝ)*Real.log (n:ℝ)",
+      "plain_statement": {
+        "zh": "所有频率上换成完整冯·芒戈尔特权的显式误差",
+        "en": "Uniform cost of replacing the upper prime spectrum by full von Mangoldt weights"
+      },
+      "brief": {
+        "zh": "对高次素数幂，Mathlib 的 ψ−θ ≤ 2√n log n 控制系数绝对值和。补回的小素数满足 k³≤n，粗略计到 √n 已足够；任意相位均适用。",
+        "en": "Bound the added prime powers by the Chebyshev ψ−θ estimate. Restored low primes satisfy k³≤n and lie below √n. Both costs are uniform in the phase."
+      },
+      "source": "https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/NumberTheory/Chebyshev.lean",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-mangoldt-masked-error",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; let d := fun (n : ℕ) (t : ℝ) => ‖S n (fun k => ArithmeticFunction.vonMangoldt k) t - S n (high n) t‖; ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n ≥ N, m (B n) (fun t => (d n t)^2) ≤ ε*(n:ℝ)",
+      "plain_statement": {
+        "zh": "素数幂与低端素数的换权误差在共振区上为 o(n)",
+        "en": "The masked squared cost of the full Mangoldt substitution is o(n)"
+      },
+      "brief": {
+        "zh": "逐点误差平方至多 16n log² n，乘以带对数权趋零的掩码面积。结论关于谱差的平方，尚需处理与主谱的交叉项。",
+        "en": "Square the uniform error and use masked-area decay after two logarithmic powers. The estimate concerns the squared difference; the eventual energy transfer also controls the mixed term."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-mangoldt-resonant-energy",
+      "statement": "let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → m (B n) (fun t => ‖S n (fun k => ArithmeticFunction.vonMangoldt k) t‖^2) ≤ (n:ℝ)/640",
+      "plain_statement": {
+        "zh": "完整冯·芒戈尔特指数和的共振能量预算",
+        "en": "Resonant energy budget for the complete von Mangoldt exponential sum"
+      },
+      "brief": {
+        "zh": "该算术猜想针对所有正素数幂，不带 k³>n 截断，可直接使用 Λ 的狄利克雷卷积恒等式。尝试 Vaughan 分解后分别控制小因子项和双线性项；必须在同一共振掩码上给出算术估计。",
+        "en": "This arithmetic conjecture uses all prime powers without a lower prime cutoff. Try Vaughan’s identity to expose small-divisor and bilinear terms. The estimate must apply to this exact resonant mask."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-packet-energy-from-mangoldt",
+      "statement": "(let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let m := fun (s : Set ℝ) (f : ℝ → ℝ) => intervalIntegral (s.indicator f) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → m (B n) (fun t => ‖S n (fun k => ArithmeticFunction.vonMangoldt k) t‖^2) ≤ (n:ℝ)/640) → (let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let E := fun x : ℝ => Complex.exp (((2*Real.pi*x:ℝ):ℂ)*Complex.I); let S := fun (n : ℕ) (w : ℕ → ℝ) (t : ℝ) => Finset.sum (Finset.range (n+1)) (fun k => (w k:ℂ)*E ((k:ℝ)*t)); let Q := fun n : ℕ => (Nat.log 2 (n+2))^2; let arcs := fun n : ℕ => {t : ℝ | ∃ q a : ℕ, 1≤q ∧ q≤Q n ∧ a≤q ∧ Nat.Coprime a q ∧ |t-(a:ℝ)/(q:ℝ)| ≤ (Q n:ℝ)/((q:ℝ)*(n:ℝ))}; let low := fun (n k : ℕ) => if k^3≤n then w k else 0; let high := fun (n k : ℕ) => w k-low n k; let I := fun (n:ℕ) (a b:ℕ→ℝ) => intervalIntegral (fun t => (arcs n)ᶜ.indicator (fun u => S n a u*S n b u*E (-(n:ℝ)*u)) t) (0:ℝ) 1 MeasureTheory.volume; let L := fun n : ℕ => max 1 (Nat.log 2 n / 2); let K := fun (n : ℕ) (t : ℝ) => (∑ j ∈ Finset.range (L n), Real.cos (2*Real.pi*(2:ℝ)^(j+1)*t))/(L n:ℝ); let B := fun n : ℕ => {t : ℝ | t ∉ arcs n ∧ (1:ℝ)/2 < K n t}; let U := fun (n : ℕ) (a : ℕ → ℝ) => intervalIntegral ((B n).indicator (fun t => ‖S n a t‖^2)) (0:ℝ) 1 MeasureTheory.volume; ∃ N : ℕ, ∀ n ≥ N, Even n → U n (high n) ≤ (n:ℝ)/576)",
+      "plain_statement": {
+        "zh": "从完整 Λ 谱返回真实素数的共振能量",
+        "en": "Return from the full Mangoldt spectrum to resonant prime energy"
+      },
+      "brief": {
+        "zh": "逐点用 (a+b)²≤(17/16)a²+17b² 控制交叉项。主谱取 n/640，平方误差取 n/10⁶；相加守住 n/576。",
+        "en": "Control the mixed term by (a+b)²≤(17/16)a²+17b². The main-spectrum allowance n/640 and squared-error allowance n/10⁶ fit within n/576."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/2327",
+      "route": "minor-truncation",
+      "program": "correlation",
+      "parallel": true,
+      "assumptions": [],
+      "depends_on": []
     }
   ],
   "links": [
@@ -1371,6 +1443,41 @@
         "en": "Add the low-peak allowance and the finite upper sum."
       },
       "bridge": "L-goldbach-packet-spikes-from-late-levels"
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-mangoldt-uniform-spectral-error",
+        "L-goldbach-packet-mask-log-decay"
+      ],
+      "output": "L-goldbach-packet-mangoldt-masked-error",
+      "kind": "input",
+      "explanation": {
+        "zh": "对统一谱误差平方再用带对数的面积衰减。",
+        "en": "Square the uniform spectral error and apply logarithmically weighted area decay."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-mangoldt-masked-error"
+      ],
+      "output": "L-goldbach-packet-energy-from-mangoldt",
+      "kind": "input",
+      "explanation": {
+        "zh": "为加权平方不等式提供可任意收紧的误差。",
+        "en": "Supply an arbitrarily small squared-error budget for the quadratic inequality."
+      }
+    },
+    {
+      "inputs": [
+        "L-goldbach-packet-mangoldt-resonant-energy"
+      ],
+      "output": "L-goldbach-packet-resonant-prime-energy",
+      "kind": "sufficient_reduction",
+      "explanation": {
+        "zh": "用已证换权误差把完整 Λ 能量接回高端素数谱。",
+        "en": "Transfer the full Mangoldt energy bound to the upper prime spectrum using the proved perturbation bound."
+      },
+      "bridge": "L-goldbach-packet-energy-from-mangoldt"
     }
   ],
   "route_note": {
