@@ -1,7 +1,7 @@
 {
   "version": 1,
   "problem": "goldbach",
-  "base_revision": "026a6c906e6e39979d628ac71ec16a0b9871576c",
+  "base_revision": "4c2190575625a6193ee5dbba0c3960e07cd3ce94",
   "request_id": "fixed-budget-binary-packet",
   "parent": {
     "id": "L-goldbach-dyadic-correlation-floor",

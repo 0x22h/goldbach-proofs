@@ -13097,27 +13097,6 @@
       "role": "lemma"
     },
     {
-      "id": "L-goldbach-finite-sieve-probe-crt",
-      "statement": "∀ n d e : ℕ, 0 < d → 0 < e → (∃ p : ℕ, p % d = n % d ∧ p % e = 1 % e) ↔ n % (Nat.gcd d e) = 1 % (Nat.gcd d e)",
-      "plain_statement": {
-        "zh": "新路线 · 小偶数覆盖 · FR-7012 · p−1 辅助权的广义 CRT",
-        "en": "New route · Finite-range coverage · FR-7012 · Generalized CRT for the p−1 probe"
-      },
-      "brief": {
-        "zh": "先仅处理相容性，不把两个模数当成独立；之后按 lcm 进入分布估计。",
-        "en": "Establish compatibility before applying progression estimates modulo the lcm."
-      },
-      "source": "https://www.goldbach.tech/?lemma=L-goldbach-binary-pointwise-positivity",
-      "program": "correlation",
-      "parallel": true,
-      "depends_on": [],
-      "file": "lean/PEqualNP/Outside/L_goldbach_finite_sieve_probe_crt.lean",
-      "module": "PEqualNP.Outside.L_goldbach_finite_sieve_probe_crt",
-      "imports": [],
-      "track": "representations",
-      "role": "lemma"
-    },
-    {
       "id": "L-goldbach-finite-sieve-probe-nonunit",
       "statement": "∀ n d e p : ℕ, Nat.Prime p → p % d = n % d → p % e = 1 % e → p ∣ Nat.lcm d e → p ∣ d ∧ p ∣ n",
       "plain_statement": {
@@ -14962,6 +14941,28 @@
       "track": "minor-truncation",
       "role": "lemma",
       "route_source": "minor-truncation"
+    },
+    {
+      "id": "L-goldbach-finite-sieve-probe-crt-positive",
+      "statement": "∀ n d e : ℕ, 0 < d → 0 < e → ((∃ p : ℕ, p % d = n % d ∧ p % e = 1 % e) ↔ n % (Nat.gcd d e) = 1 % (Nat.gcd d e))",
+      "plain_statement": {
+        "zh": "新路线 · 小偶数覆盖 · FR-7012 · p−1 辅助权的广义 CRT",
+        "en": "New route · Finite-range coverage · FR-7012 · Generalized CRT for the p−1 probe"
+      },
+      "brief": {
+        "zh": "先仅处理相容性，不把两个模数当成独立；之后按 lcm 进入分布估计。",
+        "en": "Establish compatibility before applying progression estimates modulo the lcm."
+      },
+      "source": "https://www.goldbach.tech/?lemma=L-goldbach-binary-pointwise-positivity",
+      "program": "correlation",
+      "parallel": true,
+      "depends_on": [],
+      "file": "lean/PEqualNP/Outside/L_goldbach_finite_sieve_probe_crt_positive.lean",
+      "module": "PEqualNP.Outside.L_goldbach_finite_sieve_probe_crt_positive",
+      "imports": [],
+      "track": "representations",
+      "role": "lemma",
+      "route_source": "representations"
     }
   ],
   "tracks": [
@@ -15281,8 +15282,8 @@
         "en": "Minor arcs after removing small primes"
       },
       "description": {
-        "zh": "保持原题的弧和频率；先用低段长度与 Parseval 控制低低、低高项，再单独攻高高项的有符号下界。 可用 1/144 主弧见证换取固定的高高项损失预算。检验对称二次幂移频与回到原频率的修正能否各自守住一半预算。",
-        "en": "Keep the original arcs and frequency. Use the short support and Parseval on the small terms, then study the signed bulk. Use the 1/144 major-arc witness to allow a fixed bulk loss. Test separate half-budgets for symmetric binary shifts and the correction to the original frequency."
+        "zh": "保持原题的弧和频率；先用低段长度与 Parseval 控制低低、低高项，再单独攻高高项的有符号下界。",
+        "en": "Keep the original arcs and frequency. Use the short support and Parseval on the small terms, then study the signed bulk."
       },
       "feeds": [
         "arc-budget"

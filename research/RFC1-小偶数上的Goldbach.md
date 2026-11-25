@@ -148,7 +148,7 @@ assert counts == [48, 33, 18, 4, 2] and not remaining
 | [L-goldbach-finite-rough-prototype-61](https://www.goldbach.tech/?lemma=L-goldbach-finite-rough-prototype-61) | 原型全域的六十一因子表示 |
 | [L-goldbach-finite-radical-cells-lower](https://www.goldbach.tech/?lemma=L-goldbach-finite-radical-cells-lower) | 原型小素因子类型的八类穷尽 |
 | [L-goldbach-finite-singular-product-lower](https://www.goldbach.tech/?lemma=L-goldbach-finite-singular-product-lower) | 奇异级数底乘积的有理下界 |
-| [L-goldbach-finite-sieve-probe-crt](https://www.goldbach.tech/?lemma=L-goldbach-finite-sieve-probe-crt) | p−1 辅助权的广义 CRT |
+| [L-goldbach-finite-sieve-probe-crt-positive](https://www.goldbach.tech/?lemma=L-goldbach-finite-sieve-probe-crt-positive) | p−1 辅助权的广义 CRT |
 | [L-goldbach-finite-sieve-probe-nonunit](https://www.goldbach.tech/?lemma=L-goldbach-finite-sieve-probe-nonunit) | 辅助权中的非单位素数 |
 | [L-goldbach-finite-weighted-liouville-selector](https://www.goldbach.tech/?lemma=L-goldbach-finite-weighted-liouville-selector) | 陈氏权重的奇偶选择恒等式 |
 | [L-goldbach-finite-exception-witness-cover](https://www.goldbach.tech/?lemma=L-goldbach-finite-exception-witness-cover) | 在已验证见证之外使用局部能量 |

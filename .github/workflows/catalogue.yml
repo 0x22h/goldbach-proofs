@@ -5,6 +5,7 @@ on:
     paths:
       - deploy/publish_catalogue.py
       - deploy/test_publish_catalogue.py
+      - research/check-statement-scope.lean
       - research/strong-goldbach.lean
       - research/ROADMAP.md
       - 'research/problems/**'
@@ -18,6 +19,7 @@ on:
     paths:
       - deploy/publish_catalogue.py
       - deploy/test_publish_catalogue.py
+      - research/check-statement-scope.lean
       - research/strong-goldbach.lean
       - research/ROADMAP.md
       - 'research/problems/**'
@@ -67,6 +69,7 @@ jobs:
           assert all(not gap["imports"] for gap in gaps)
           endpoint = next(g["statement"] for g in gaps if g["id"] == "L-goldbach-binary-pointwise-positivity")
           lines = [Path("../research/strong-goldbach.lean").read_text(),
+                   Path("../research/check-statement-scope.lean").read_text(),
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
@@ -113,7 +116,7 @@ jobs:
               "L-goldbach-fixed-budget-to-dyadic": "GoldbachBudget.fixedToDyadic",
           }
           for gap in gaps:
-              lines.extend(("", "-- " + gap["id"], "example : Prop := (" + gap["statement"] + ")"))
+              lines.extend(("", "-- " + gap["id"], "#check_statement_scope (" + gap["statement"] + ")", "example : Prop := (" + gap["statement"] + ")"))
               if gap["id"] in reductions:
                   lines.append(f"example : ({gap['statement']}) := {reductions.pop(gap['id'])}")
           assert not reductions, f"Missing catalogue reductions: {reductions}"
