@@ -1085,41 +1085,45 @@ private theorem lorentzIntegral {r : ℝ} (hr : 0 < r) (c : ℝ) :
   have hb := Real.neg_pi_div_two_lt_arctan ((0-c)/r)
   linarith
 
-/-- Every k/30, including 0 and 1, belongs to the frozen family after reducing the fraction. -/
-private theorem gridExclusion {n k : ℕ} {t : ℝ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
-    (hk : k ≤ 30) (hm : t ∉ GoldbachBudget.arcs n) :
-    (gridQ n:ℝ)/(30*(n:ℝ)) < |t-(k:ℝ)/30| := by
-  obtain ⟨g,a,q,hg,hcop,hk',hq'⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right k (by decide : 0 < 30))
-  have hq : 0 < q := by by_contra! hz; simp [show q=0 by omega] at hq'
-  have hq30 : q ≤ 30 := Nat.le_of_dvd (by decide) ⟨g,hq'⟩
+/-- All rationals with unreduced denominator d ≤ Q are protected by the frozen arcs. -/
+private theorem denominatorExclusion {n k d : ℕ} {t : ℝ} (hn : 0 < n) (hd : 0 < d) (hQ : d ≤ gridQ n)
+    (hk : k ≤ d) (hm : t ∉ GoldbachBudget.arcs n) :
+    (gridQ n:ℝ)/(d*(n:ℝ)) < |t-(k:ℝ)/d| := by
+  obtain ⟨g,a,q,hg,hcop,hk',hq'⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right k hd)
+  have hq : 0 < q := by
+    by_contra! hz
+    have he : q=0 := by omega
+    rw [he, zero_mul] at hq'
+    omega
+  have hqd : q ≤ d := Nat.le_of_dvd hd ⟨g,hq'⟩
   have haq : a ≤ q := by
     exact (Nat.mul_le_mul_right_iff hg).mp (show a*g ≤ q*g by omega)
-  have eq : (k:ℝ)/30 = (a:ℝ)/(q:ℝ) := by
-    apply (div_eq_div_iff (by norm_num) (by positivity)).mpr
-    have cross : k*q = a*30 := by rw [hk',hq']; ring
+  have eq : (k:ℝ)/d = (a:ℝ)/(q:ℝ) := by
+    apply (div_eq_div_iff (by positivity) (by positivity)).mpr
+    have cross : k*q = a*d := by rw [hk',hq']; ring
     exact_mod_cast cross
   by_contra! h
   apply hm
-  refine ⟨q,a,hq,hq30.trans hQ,haq,hcop,?_⟩
+  refine ⟨q,a,hq,hqd.trans hQ,haq,hcop,?_⟩
   rw [← eq]
   exact h.trans (div_le_div_of_nonneg_left (Nat.cast_nonneg _) (by positivity)
-    (mul_le_mul_of_nonneg_right (by exact_mod_cast hq30 : (q:ℝ) ≤ 30) (Nat.cast_nonneg _)))
+    (mul_le_mul_of_nonneg_right (by exact_mod_cast hqd : (q:ℝ) ≤ d) (Nat.cast_nonneg _)))
 
-private theorem gridChord (t : ℝ) (k : ℕ) (hk : |30*t-(k:ℝ)| ≤ 1/2) :
-    |t-(k:ℝ)/30| ≤ gridDistance t := by
-  let u := 30*t-(k:ℝ)
+private theorem integerChord (v : ℝ) (k : ℕ) (hk : |v-(k:ℝ)| ≤ 1/2) :
+    4*|v-(k:ℝ)| ≤ ‖GoldbachBudget.phase v-1‖ := by
+  let u := v-(k:ℝ)
   let x := Real.pi*u
-  let y := 2*Real.pi*(30*t)
+  let y := 2*Real.pi*(v)
   have hangle : y = 2*x + (k:ℝ)*(2*Real.pi) := by dsimp [y,x,u]; ring
-  have hs : gridDistance t ^ 2 = 2-2*Real.cos y := by
+  have hs : ‖GoldbachBudget.phase v-1‖ ^ 2 = 2-2*Real.cos y := by
     change ‖Complex.exp ((y:ℂ)*Complex.I)-1‖^2 = _
     rw [Complex.sq_norm, Complex.normSq_apply]
     simp only [Complex.sub_re,Complex.sub_im,Complex.one_re,Complex.one_im,sub_zero,
       Complex.exp_ofReal_mul_I_re,Complex.exp_ofReal_mul_I_im]
     nlinarith only [Real.sin_sq_add_cos_sq y]
-  have he : gridDistance t = 2*|Real.sin x| := by
+  have he : ‖GoldbachBudget.phase v-1‖ = 2*|Real.sin x| := by
     apply (sq_eq_sq₀ (norm_nonneg _) (by positivity)).mp
-    change gridDistance t ^ 2 = (2*|Real.sin x|)^2
+    change ‖GoldbachBudget.phase v-1‖ ^ 2 = (2*|Real.sin x|)^2
     rw [hs,hangle,Real.cos_add_nat_mul_two_pi,Real.cos_two_mul]
     nlinarith only [sq_abs (Real.sin x), Real.sin_sq_add_cos_sq x]
   have hx : |x| ≤ Real.pi/2 := by
@@ -1128,11 +1132,16 @@ private theorem gridChord (t : ℝ) (k : ℕ) (hk : |30*t-(k:ℝ)| ≤ 1/2) :
   have hj := Real.mul_abs_le_abs_sin hx
   have hxu : |x| = Real.pi*|u| := by dsimp [x]; rw [abs_mul,abs_of_pos Real.pi_pos]
   rw [hxu,show 2/Real.pi*(Real.pi*|u|) = 2*|u| by field_simp] at hj
-  have hu : |u| = 30*|t-(k:ℝ)/30| := by
-    rw [show u=30*(t-(k:ℝ)/30) by dsimp [u]; ring,abs_mul]
-    norm_num
-  rw [hu] at hj
   rw [he]
+  change 4*|u| ≤ _
+  linarith only [hj]
+
+private theorem gridChord (t : ℝ) (k : ℕ) (hk : |30*t-(k:ℝ)| ≤ 1/2) :
+    |t-(k:ℝ)/30| ≤ gridDistance t := by
+  have h := integerChord (30*t) k hk
+  have eq : 30*t-(k:ℝ) = 30*(t-(k:ℝ)/30) := by ring
+  rw [eq,abs_mul,abs_of_pos (by norm_num : (0:ℝ)<30)] at h
+  change _ ≤ ‖GoldbachBudget.phase (30*t)-1‖
   linarith [abs_nonneg (t-(k:ℝ)/30)]
 
 private theorem gridPointMajorant {n : ℕ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
@@ -1155,7 +1164,7 @@ private theorem gridPointMajorant {n : ℕ} (hn : 0 < n) (hQ : 30 ≤ gridQ n)
       linarith
     have close : |30*t-(k:ℝ)| ≤ 1/2 := abs_le.mpr ⟨by linarith,by linarith⟩
     have hdist := gridChord t k close
-    have hcut : r ≤ |t-(k:ℝ)/30| := (gridExclusion hn hQ hk hm).le
+    have hcut : r ≤ |t-(k:ℝ)/30| := (denominatorExclusion hn (by decide : 0<30) hQ hk hm).le
     have h1' := pow_le_pow_left₀ hr.le (hcut.trans hdist) 2
     have h2' := pow_le_pow_left₀ (abs_nonneg _) hdist 2
     rw [sq_abs] at h2'
@@ -1250,6 +1259,97 @@ theorem maskedEnergyFromLong
       (∫ t in (0:ℝ)..1, (resonant n).indicator (fun u => ‖GoldbachBudget.spec n (GoldbachBudget.high n) u‖^2) t)
         ≤ (n:ℝ)/576 :=
   GoldbachBudget.energyFromLags lagEnergyIdentity wheelMaskedBudget shortWheelBudget far
+
+private def progression (d M : ℕ) (t : ℝ) :=
+  ∑ j ∈ Finset.range M, (GoldbachBudget.phase ((d:ℝ)*t))^(j+1)
+private def minorMass (n : ℕ) (f : ℝ → ℝ) :=
+  ∫ t in (0:ℝ)..1, (GoldbachBudget.arcs n)ᶜ.indicator f t
+
+private theorem minorIntegrable (n : ℕ) {f : ℝ → ℝ} (hc : Continuous f) :
+    IntervalIntegrable ((GoldbachBudget.arcs n)ᶜ.indicator f) MeasureTheory.volume (0:ℝ) 1 := by
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+  exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+    (hc.intervalIntegrable (μ := MeasureTheory.volume) 0 1)).indicator (GoldbachBudget.measurableArcs n).compl
+
+private theorem progressionMajorant {n d : ℕ} (hn : 0<n) (hd : 0<d) (hQ : d ≤ gridQ n)
+    (M : ℕ) (t : ℝ) (ht : t ∈ Set.Icc (0:ℝ) 1) :
+    (GoldbachBudget.arcs n)ᶜ.indicator (fun u => ‖progression d M u‖^2) t ≤
+      ∑ k ∈ Finset.range (d+1), lorentz ((gridQ n:ℝ)/((d:ℝ)*n)) ((k:ℝ)/d) t / (d:ℝ)^2 := by
+  let r := (gridQ n:ℝ)/((d:ℝ)*n)
+  have hq : 0 < gridQ n := by omega
+  have hr : 0 < r := by dsimp [r]; positivity
+  have dr : 0 < (d:ℝ) := by exact_mod_cast hd
+  have nonneg (k : ℕ) : 0 ≤ lorentz r ((k:ℝ)/d) t / (d:ℝ)^2 := by unfold lorentz; positivity
+  by_cases hm : t ∈ (GoldbachBudget.arcs n)ᶜ
+  · rw [Set.indicator_of_mem hm]
+    let k := ⌊(d:ℝ)*t+1/2⌋₊
+    have hlow : (k:ℝ) ≤ (d:ℝ)*t+1/2 := Nat.floor_le (by have := ht.1; positivity)
+    have hhi : (d:ℝ)*t+1/2 < (k:ℝ)+1 := Nat.lt_floor_add_one _
+    have hk : k ≤ d := by
+      by_contra! hh
+      have hc : (d:ℝ)+1 ≤ k := by exact_mod_cast hh
+      linarith [mul_le_mul_of_nonneg_left ht.2 dr.le]
+    let z := GoldbachBudget.phase ((d:ℝ)*t)
+    let A := ‖progression d M t‖
+    let b := |t-(k:ℝ)/d|
+    have hb : 0 ≤ b := abs_nonneg _
+    have hA : 0 ≤ A := norm_nonneg _
+    have hz : ‖z‖ = 1 := phaseUnit _
+    have hprod : A*‖z-1‖ ≤ 2 := by
+      have eq : progression d M t = z*(∑ j ∈ Finset.range M, z^j) := by
+        simp only [progression,Finset.mul_sum,pow_succ',z]
+      dsimp only [A]
+      rw [eq,norm_mul,hz,one_mul,← norm_mul,geom_sum_mul]
+      exact (norm_sub_le ..).trans (by norm_num [norm_pow,hz])
+    have hc := integerChord ((d:ℝ)*t) k (abs_le.mpr ⟨by linarith,by linarith⟩)
+    have eq : (d:ℝ)*t-(k:ℝ) = (d:ℝ)*(t-(k:ℝ)/d) := by field_simp; ring
+    rw [eq,abs_mul,abs_of_pos dr] at hc
+    change 4*((d:ℝ)*b) ≤ ‖z-1‖ at hc
+    have hAb : (A*d)*b ≤ 1/2 := by linarith only [mul_le_mul_of_nonneg_left hc hA,hprod]
+    have hAr : (A*d)*r ≤ 1/2 := (mul_le_mul_of_nonneg_left (denominatorExclusion hn hd hQ hk hm).le (mul_nonneg hA dr.le)).trans hAb
+    have h1 := pow_le_pow_left₀ (by positivity : 0 ≤ (A*d)*b) hAb 2
+    have h2 := pow_le_pow_left₀ (by positivity : 0 ≤ (A*d)*r) hAr 2
+    have hy : (t-(k:ℝ)/d)^2 = b^2 := (sq_abs _).symm
+    have bound : A^2 ≤ lorentz r ((k:ℝ)/d) t / (d:ℝ)^2 := by
+      apply (le_div_iff₀ (by positivity)).mpr
+      unfold lorentz
+      apply (le_div_iff₀ (by positivity)).mpr
+      rw [hy]
+      nlinarith only [h1,h2]
+    exact bound.trans (Finset.single_le_sum (fun k _ => nonneg k) (Finset.mem_range.mpr (by omega : k<d+1)))
+  · rw [Set.indicator_of_notMem hm]
+    exact Finset.sum_nonneg fun k _ => nonneg k
+
+/-- The leakage bound is uniform both in the permissible denominator and in the progression length. -/
+theorem progressionLeakage (n d M : ℕ) (hn : 0<n) (hd : 0<d) (hQ : d ≤ gridQ n) :
+    minorMass n (fun t => ‖progression d M t‖^2) ≤ 2*Real.pi*(n:ℝ)/(gridQ n:ℝ) := by
+  let r := (gridQ n:ℝ)/((d:ℝ)*n)
+  have hq : 0 < gridQ n := by omega
+  have dr : (0:ℝ) < d := by exact_mod_cast hd
+  have hr : 0 < r := by dsimp [r]; positivity
+  let f := fun (k : ℕ) (t : ℝ) => ((d:ℝ)^2)⁻¹ * lorentz r ((k:ℝ)/d) t
+  have hf (k : ℕ) : Continuous (f k) := continuous_const.mul (lorentzContinuous hr _)
+  have hs : Continuous (fun t => ∑ k ∈ Finset.range (d+1), f k t) := by fun_prop
+  have hprog : Continuous (fun t => ‖progression d M t‖^2) := by unfold progression GoldbachBudget.phase; fun_prop
+  calc
+    _ ≤ ∫ t in (0:ℝ)..1, ∑ k ∈ Finset.range (d+1), f k t := by
+      apply intervalIntegral.integral_mono_on (by norm_num) (minorIntegrable n hprog) (hs.intervalIntegrable ..)
+      intro t ht
+      simpa only [f,r,div_eq_inv_mul] using progressionMajorant hn hd hQ M t ht
+    _ = ∑ k ∈ Finset.range (d+1), ((d:ℝ)^2)⁻¹ * ∫ t in (0:ℝ)..1, lorentz r ((k:ℝ)/d) t := by
+      rw [intervalIntegral.integral_finsetSum (fun k _ => (hf k).intervalIntegrable ..)]
+      simp only [f,intervalIntegral.integral_const_mul]
+    _ ≤ ∑ _k ∈ Finset.range (d+1), ((d:ℝ)^2)⁻¹ * (Real.pi/r) := Finset.sum_le_sum
+      fun k _ => mul_le_mul_of_nonneg_left (lorentzIntegral hr _) (by positivity)
+    _ = ((d:ℝ)+1)/d * (Real.pi*(n:ℝ)/(gridQ n:ℝ)) := by
+      simp only [Finset.sum_const,nsmul_eq_mul,Finset.card_range,Nat.cast_add,Nat.cast_one,r]
+      field_simp; ring
+    _ ≤ _ := by
+      have h1 : (1:ℝ) ≤ d := by exact_mod_cast hd
+      have h2 : ((d:ℝ)+1)/d ≤ 2 := (div_le_iff₀ dr).mpr (by linarith)
+      calc
+        _ ≤ 2*(Real.pi*(n:ℝ)/(gridQ n:ℝ)) := mul_le_mul_of_nonneg_right h2 (by positivity)
+        _ = _ := by ring
 
 end
 end GoldbachPacket
