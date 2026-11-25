@@ -553,5 +553,141 @@ theorem maskLogDecay (d : ℕ) (ε : ℝ) (hε : 0 < ε) :
       have hh := (lt_div_iff₀ (by positivity : 0 < (5:ℝ)^d)).mp htM
       linarith only [hh]
 
+private def cosineMoment (n h : ℕ) :=
+  ∫ t in (0:ℝ)..1, (resonant n).indicator (fun u => Real.cos (2*Real.pi*(h:ℝ)*u)) t
+private def correlation (n h : ℕ) (a : ℕ → ℝ) :=
+  ∑ k ∈ Finset.range (n+1-h), a k * a (k+h)
+private def shortPart (n : ℕ) (a : ℕ → ℝ) :=
+  correlation n 0 a * cosineMoment n 0 + 2 * ∑ h ∈ Finset.Icc 1 (min n ((length n)^2)),
+    correlation n h a * cosineMoment n h
+private def wheel (k : ℕ) := if Nat.Coprime k 30 then (30:ℝ)/8 else 0
+
+private theorem zeroMoment (n : ℕ) :
+    cosineMoment n 0 = ∫ t in (0:ℝ)..1, (resonant n).indicator (fun _ => (1:ℝ)) t := by
+  simp [cosineMoment]
+
+private theorem cosineMomentBound (n h : ℕ) : |cosineMoment n h| ≤ cosineMoment n 0 := by
+  have hc : Continuous (fun t => packet (length n) t / (length n:ℝ)) := by unfold packet; fun_prop
+  have hm : MeasurableSet (resonant n) := (GoldbachBudget.measurableArcs n).compl.inter
+    (isOpen_lt (continuous_const : Continuous (fun _ : ℝ => (1:ℝ)/2)) hc).measurableSet
+  have hi : IntervalIntegrable ((resonant n).indicator (fun _ => (1:ℝ))) MeasureTheory.volume (0:ℝ) 1 := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0:ℝ) ≤ 1)).mp
+      (intervalIntegrable_const : IntervalIntegrable (fun _ => (1:ℝ)) MeasureTheory.volume 0 1)).indicator hm
+  rw [zeroMoment, cosineMoment]
+  change ‖∫ t in (0:ℝ)..1, (resonant n).indicator (fun u => Real.cos (2*Real.pi*(h:ℝ)*u)) t‖ ≤ _
+  apply intervalIntegral.norm_integral_le_of_norm_le (by norm_num) _ hi
+  apply Filter.Eventually.of_forall
+  intro t _
+  by_cases ht : t ∈ resonant n
+  · simpa [ht, Real.norm_eq_abs] using (abs_le.mpr
+      ⟨Real.neg_one_le_cos (2*Real.pi*(h:ℝ)*t), Real.cos_le_one _⟩)
+  · simp [ht]
+
+private theorem correlationBound (n h : ℕ) (a : ℕ → ℝ) (M : ℝ) (hM : 0 ≤ M)
+    (ha : ∀ k ≤ n, |a k| ≤ M) : |correlation n h a| ≤ ((n:ℝ)+1)*M^2 := by
+  unfold correlation
+  calc
+    _ ≤ _ := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k ∈ Finset.range (n+1-h), M^2 := by
+      apply Finset.sum_le_sum
+      intro k hk
+      have hk' := Finset.mem_range.mp hk
+      rw [abs_mul, pow_two]
+      exact mul_le_mul (ha k (by omega)) (ha (k+h) (by omega)) (abs_nonneg _) hM
+    _ = ((n+1-h:ℕ):ℝ) * M^2 := by simp
+    _ ≤ _ := by
+      apply mul_le_mul_of_nonneg_right _ (sq_nonneg M)
+      exact_mod_cast Nat.sub_le (n+1) h
+
+/-- Include lag zero once and each positive lag twice, even if the cutoff exceeds n. -/
+theorem shortEnvelope (n : ℕ) (a : ℕ → ℝ) (M : ℝ) (hM : 0 ≤ M) (ha : ∀ k ≤ n, |a k| ≤ M) :
+    |shortPart n a| ≤ (1+2*(length n:ℝ)^2)*((n:ℝ)+1)*M^2*cosineMoment n 0 := by
+  let H := min n ((length n)^2)
+  let B := ((n:ℝ)+1)*M^2*cosineMoment n 0
+  have hm0 : 0 ≤ cosineMoment n 0 := (abs_nonneg _).trans (cosineMomentBound n 0)
+  have hB : 0 ≤ B := by dsimp [B]; positivity
+  have each (h : ℕ) : |correlation n h a * cosineMoment n h| ≤ B := by
+    rw [abs_mul]
+    exact mul_le_mul (correlationBound n h a M hM ha) (cosineMomentBound n h) (abs_nonneg _) (by positivity)
+  have hs : |∑ h ∈ Finset.Icc 1 H, correlation n h a * cosineMoment n h| ≤ (length n:ℝ)^2*B := by
+    calc
+      _ ≤ _ := Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ _h ∈ Finset.Icc 1 H, B := Finset.sum_le_sum fun h _ => each h
+      _ = (H:ℝ)*B := by simp [Nat.card_Icc]
+      _ ≤ _ := by
+        apply mul_le_mul_of_nonneg_right _ hB
+        exact_mod_cast (min_le_right n ((length n)^2))
+  unfold shortPart
+  apply (abs_add_le ..).trans
+  rw [abs_mul (2:ℝ), abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2)]
+  calc
+    _ ≤ B + 2*((length n:ℝ)^2*B) := add_le_add (each 0) (by linarith only [hs])
+    _ = _ := by dsimp [B]; ring
+
+private theorem lengthUpper (n : ℕ) (hn : 1 ≤ n) : (length n:ℝ) ≤ 2*(1+Real.log (n:ℝ)) := by
+  have he : (2:ℝ)^(Nat.log 2 n) ≤ (n:ℝ) := by
+    exact_mod_cast Nat.pow_log_le_self 2 (by omega : n ≠ 0)
+  have hl := Real.log_le_log (by positivity : 0 < (2:ℝ)^(Nat.log 2 n)) he
+  rw [Real.log_pow] at hl
+  have half : (1/2:ℝ) ≤ Real.log 2 := by
+    have h := Real.one_sub_inv_le_log_of_pos (by norm_num : (0:ℝ) < 2)
+    linarith
+  have hnat : length n ≤ Nat.log 2 n + 1 := by unfold length; omega
+  have hr : (length n:ℝ) ≤ (Nat.log 2 n:ℝ) + 1 := by exact_mod_cast hnat
+  linarith [mul_le_mul_of_nonneg_left half (Nat.cast_nonneg (α := ℝ) (Nat.log 2 n))]
+
+/-- The sublinear estimate is uniform over all bounded weights at the prime logarithmic scale. -/
+private theorem shortAtLogScale (n : ℕ) (hn : 1 ≤ n) (a : ℕ → ℝ)
+    (ha : ∀ k ≤ n, |a k| ≤ 4*(1+Real.log (n:ℝ))) :
+    |shortPart n a| ≤ 288*(n:ℝ)*(1+Real.log (n:ℝ))^4*cosineMoment n 0 := by
+  let x := 1+Real.log (n:ℝ)
+  have hx : 1 ≤ x := by dsimp [x]; linarith [Real.log_nonneg (by exact_mod_cast hn : (1:ℝ) ≤ n)]
+  have hl : (length n:ℝ) ≤ 2*x := lengthUpper n hn
+  have hl2 : (length n:ℝ)^2 ≤ (2*x)^2 := pow_le_pow_left₀ (Nat.cast_nonneg _) hl 2
+  have hf : 1+2*(length n:ℝ)^2 ≤ 9*x^2 := by nlinarith [sq_nonneg (x-1)]
+  have hn' : (1:ℝ) ≤ n := by exact_mod_cast hn
+  have hm0 : 0 ≤ cosineMoment n 0 := (abs_nonneg _).trans (cosineMomentBound n 0)
+  apply (shortEnvelope n a (4*x) (by linarith) ha).trans
+  calc
+    _ ≤ (9*x^2)*(2*(n:ℝ))*(4*x)^2*cosineMoment n 0 := by
+      gcongr <;> linarith
+    _ = _ := by change _ = 288*(n:ℝ)*x^4*cosineMoment n 0; ring
+
+/-- Both absolute short pieces are sublinear, so their difference is sublinear for every n. -/
+theorem shortWheelSublinear (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, |shortPart n (GoldbachBudget.high n) - shortPart n wheel| ≤ ε*(n:ℝ) := by
+  obtain ⟨N,hN⟩ := maskLogDecay 4 (ε/576) (by positivity)
+  refine ⟨max 1 N, ?_⟩
+  intro n hn
+  have hn1 : 1 ≤ n := by omega
+  have hlog : 0 ≤ Real.log (n:ℝ) := Real.log_nonneg (by exact_mod_cast hn1)
+  let M := 4*(1+Real.log (n:ℝ))
+  have hpr (k : ℕ) (hk : k ≤ n) : |GoldbachBudget.high n k| ≤ M := by
+    unfold GoldbachBudget.high GoldbachBudget.low
+    by_cases hl : k^3 ≤ n
+    · simp [hl]; dsimp [M]; linarith
+    · simp only [hl, if_false, sub_zero, GoldbachBudget.w]
+      by_cases hp : Nat.Prime k
+      · have hpos : (1:ℝ) ≤ k := by exact_mod_cast hp.one_lt.le
+        rw [if_pos hp, abs_of_nonneg (Real.log_nonneg hpos)]
+        have hle := Real.log_le_log (by positivity : 0 < (k:ℝ)) (show (k:ℝ) ≤ n by exact_mod_cast hk)
+        dsimp [M]; linarith
+      · simp [hp]; dsimp [M]; linarith
+  have hwh (k : ℕ) (_hk : k ≤ n) : |wheel k| ≤ M := by
+    dsimp [wheel,M]; split <;> norm_num <;> linarith
+  have harea := hN n (by omega)
+  rw [← zeroMoment] at harea
+  have sum := (abs_sub (shortPart n (GoldbachBudget.high n)) (shortPart n wheel)).trans
+    (add_le_add (shortAtLogScale n hn1 _ hpr) (shortAtLogScale n hn1 _ hwh))
+  have hx := mul_le_mul_of_nonneg_left harea (Nat.cast_nonneg (α := ℝ) n)
+  linarith only [sum,hx]
+
+theorem shortWheelBudget :
+    ∃ N : ℕ, ∀ n ≥ N, Even n →
+      |shortPart n (GoldbachBudget.high n) - shortPart n wheel| ≤ (n:ℝ)/2304 := by
+  obtain ⟨N,hN⟩ := shortWheelSublinear (1/2304) (by norm_num)
+  exact ⟨N, fun n hn _ => by linarith only [hN n hn]⟩
+
 end
 end GoldbachPacket
