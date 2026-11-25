@@ -8284,7 +8284,11 @@
       "imports": [],
       "track": "odd-character-interference",
       "role": "lemma",
-      "depends_on": []
+      "depends_on": [
+        "L-goldbach-dyadic-conductor-active-range",
+        "L-goldbach-dyadic-conductor-ratio",
+        "L-goldbach-dyadic-conductor-prefix"
+      ]
     },
     {
       "id": "L-goldbach-conductor-dyadic-scale",
@@ -8806,7 +8810,11 @@
       "depends_on": [
         "L-goldbach-pp-count-squares",
         "L-goldbach-pp-count-cubes",
-        "L-goldbach-pp-exp-cutoff"
+        "L-goldbach-pp-exp-cutoff",
+        "L-goldbach-power-box-card",
+        "L-goldbach-power-box-detect",
+        "L-goldbach-sparse-weight-duality",
+        "L-goldbach-power-box-vanishing"
       ]
     },
     {
@@ -9953,7 +9961,10 @@
       "depends_on": [
         "L-goldbach-pp-count-squares",
         "L-goldbach-pp-count-cubes",
-        "L-goldbach-pp-exp-cutoff"
+        "L-goldbach-pp-exp-cutoff",
+        "L-goldbach-ap-power-box-envelope",
+        "L-goldbach-ap-power-box-scale",
+        "L-goldbach-power-box-card"
       ]
     },
     {
@@ -10465,7 +10476,10 @@
       "track": "odd-character-interference",
       "role": "lemma",
       "depends_on": [
-        "L-goldbach-mellin-unit-bin-budget"
+        "L-goldbach-mellin-unit-bin-budget",
+        "L-goldbach-mellin-tail-binning",
+        "L-goldbach-mellin-log-transport",
+        "L-goldbach-mellin-power-tail"
       ]
     },
     {
@@ -10861,7 +10875,12 @@
       "imports": [],
       "track": "odd-character-interference",
       "role": "lemma",
-      "depends_on": []
+      "depends_on": [
+        "L-goldbach-window-square-lipschitz",
+        "L-goldbach-sampled-window-variation",
+        "L-goldbach-log-grid-variation",
+        "L-goldbach-grid-product-variation"
+      ]
     },
     {
       "id": "L-goldbach-diagonal-riemann-constant",
@@ -11100,6 +11119,351 @@
         "L-goldbach-mellin-log-identification",
         "L-goldbach-mellin-phase-regularity"
       ]
+    },
+    {
+      "id": "L-goldbach-power-box-card",
+      "file": "lean/PEqualNP/Outside/L_goldbach_power_box_card.lean",
+      "module": "PEqualNP.Outside.L_goldbach_power_box_card",
+      "statement": "let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n : ℕ, (S n).card ≤ Nat.sqrt n * Nat.log 2 n",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0088 · 完全幂支持的底数–指数盒计数",
+        "en": "New route · Odd-character interference · OC-0088 · Count perfect powers by a base–exponent box"
+      },
+      "brief": {
+        "zh": "把每个幂写成有限笛卡尔积在幂映射下的像，重合只会减少基数。 下游：L-goldbach-pp-uniform-removal。",
+        "en": "Bound the cardinality of the image of the base–exponent rectangle. Downstream: L-goldbach-pp-uniform-removal."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-power-box-detect",
+      "file": "lean/PEqualNP/Outside/L_goldbach_power_box_detect.lean",
+      "module": "PEqualNP.Outside.L_goldbach_power_box_detect",
+      "statement": "let A := fun k : ℕ => if 0 < ((Finset.Icc 2 (Nat.log 2 k)).filter (fun a => k.minFac ^ a=k)).card then Real.log (k:ℝ) else 0; let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n k : ℕ, k≤n → A k≠0 → k∈S n",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0089 · 最小素因子探测权的支撑嵌入",
+        "en": "New route · Odd-character interference · OC-0089 · Embed the detected support in the power box"
+      },
+      "brief": {
+        "zh": "从非零权取出指数。排除 k=0,1，再用平方根与对数截断限制底数和指数。 下游：L-goldbach-pp-uniform-removal。",
+        "en": "Extract the detected exponent, discard zero and one, and apply both cutoffs. Downstream: L-goldbach-pp-uniform-removal."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": [
+        "L-goldbach-pp-base-cutoff",
+        "L-goldbach-pp-exp-cutoff"
+      ]
+    },
+    {
+      "id": "L-goldbach-sparse-weight-duality",
+      "file": "lean/PEqualNP/Outside/L_goldbach_sparse_weight_duality.lean",
+      "module": "PEqualNP.Outside.L_goldbach_sparse_weight_duality",
+      "statement": "∀ (s t : Finset ℕ) (f v : ℕ → ℝ) (B : ℝ), 0≤B → (∀ k ∈ s, f k≠0 → k∈t) → (∀ k ∈ s, |f k|≤B) → (∀ k ∈ s, |v k|≤1) → |∑ k ∈ s, f k*v k| ≤ (t.card:ℝ)*B",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0090 · 任意有界乘子的有限支撑误差预算",
+        "en": "New route · Odd-character interference · OC-0090 · Uniform multiplier bound for sparse weights"
+      },
+      "brief": {
+        "zh": "把和限制在交集上，再用三角不等式。允许测试函数随尺度改变。 下游：L-goldbach-pp-uniform-removal。",
+        "en": "Restrict to the intersection and sum absolute values; the multiplier may vary with scale. Downstream: L-goldbach-pp-uniform-removal."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-power-box-vanishing",
+      "file": "lean/PEqualNP/Outside/L_goldbach_power_box_vanishing.lean",
+      "module": "PEqualNP.Outside.L_goldbach_power_box_vanishing",
+      "statement": "∀ ε : ℝ, 0<ε → ∃ X : ℕ, ∀ n≥X, ((Nat.sqrt n:ℝ)*(Nat.log 2 n:ℝ))*Real.log ((n+1:ℕ):ℝ)^2/(n:ℝ)<ε",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0091 · 平方根盒乘双对数损失的一致消失",
+        "en": "New route · Odd-character interference · OC-0091 · Decay of the logarithmically weighted power box"
+      },
+      "brief": {
+        "zh": "比较自然数截断和实对数，用三次对数低于任何正幂的极限。 下游：L-goldbach-pp-uniform-removal。",
+        "en": "Compare integer cutoffs to real powers and logarithms; absorb the cubic logarithm against the square root. Downstream: L-goldbach-pp-uniform-removal."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-ap-power-box-envelope",
+      "file": "lean/PEqualNP/Outside/L_goldbach_ap_power_box_envelope.lean",
+      "module": "PEqualNP.Outside.L_goldbach_ap_power_box_envelope",
+      "statement": "let w := fun k : ℕ => if Nat.Prime k then Real.log (k:ℝ) else 0; let h := fun k : ℕ => ArithmeticFunction.vonMangoldt k-w k; let S := fun n : ℕ => (Finset.range (n+1)).filter (fun k => ∃ p ∈ Finset.Icc 2 (Nat.sqrt n), ∃ a ∈ Finset.Icc 2 (Nat.log 2 n), p^a=k); ∀ n k : ℕ, 2≤n → k≤n → 0≤h k ∧ h k ≤ (if k∈S n then Real.log (n:ℝ) else 0)",
+      "plain_statement": {
+        "zh": "新路线 · Theta 反射 · TH-0090 · 剩余类上素数幂误差的点态包络",
+        "en": "New route · Theta reflection · TH-0090 · Pointwise envelope for the prime-power discrepancy"
+      },
+      "brief": {
+        "zh": "素数点上权相消；其余非零项用素数幂支撑和 von Mangoldt 的对数界。 下游：L-goldbach-coset-primepower-ap-budget。",
+        "en": "Cancel primes; bound each remaining Mangoldt term by log n and locate its support. Downstream: L-goldbach-coset-primepower-ap-budget."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "theta-reflection",
+      "role": "lemma",
+      "depends_on": [
+        "L-goldbach-mangoldt-power-support",
+        "L-goldbach-pp-base-cutoff",
+        "L-goldbach-pp-exp-cutoff"
+      ]
+    },
+    {
+      "id": "L-goldbach-ap-power-box-scale",
+      "file": "lean/PEqualNP/Outside/L_goldbach_ap_power_box_scale.lean",
+      "module": "PEqualNP.Outside.L_goldbach_ap_power_box_scale",
+      "statement": "∃ C : ℝ, 0<C ∧ ∀ n : ℕ, 2≤n → (Nat.sqrt n:ℝ)*(Nat.log 2 n:ℝ)*Real.log (n:ℝ) ≤ C*Real.sqrt (n:ℝ)*(Real.log (2*(n:ℝ)))^2",
+      "plain_statement": {
+        "zh": "新路线 · Theta 反射 · TH-0091 · 将整数截断换成统一平方根对数预算",
+        "en": "New route · Theta reflection · TH-0091 · Uniform real bound for integer power cutoffs"
+      },
+      "brief": {
+        "zh": "用二进对数的换底常数统一所有 n≥2；余数类不会影响常数。 下游：L-goldbach-coset-primepower-ap-budget。",
+        "en": "Use the binary-log change of base with a constant independent of the residue and modulus. Downstream: L-goldbach-coset-primepower-ap-budget."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "theta-reflection",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-dyadic-conductor-active-range",
+      "file": "lean/PEqualNP/Outside/L_goldbach_dyadic_conductor_active_range.lean",
+      "module": "PEqualNP.Outside.L_goldbach_dyadic_conductor_active_range",
+      "statement": "∀ k j : ℕ, j≤k → (2 < (2:ℕ)^k/2^j ↔ j+2≤k)",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0092 · 截断后有贡献的导子层",
+        "en": "New route · Odd-character interference · OC-0092 · Identify the active conductor layers"
+      },
+      "brief": {
+        "zh": "用精确的二次幂整除把商写为幂差，检查末两层。 下游：L-goldbach-conductor-dyadic-sum。",
+        "en": "Rewrite the exact power quotient and isolate the last two layers. Downstream: L-goldbach-conductor-dyadic-sum."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-dyadic-conductor-ratio",
+      "file": "lean/PEqualNP/Outside/L_goldbach_dyadic_conductor_ratio.lean",
+      "module": "PEqualNP.Outside.L_goldbach_dyadic_conductor_ratio",
+      "statement": "∀ k j : ℕ, j+2≤k → (Nat.totient (2^k/2^j):ℝ)/(Nat.totient (2^k):ℝ) = 1/(2:ℝ)^j",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0093 · 活跃层的欧拉函数比值",
+        "en": "New route · Odd-character interference · OC-0093 · Totient ratio on an active layer"
+      },
+      "brief": {
+        "zh": "将分子分母的欧拉函数化为二的幂再约分。 下游：L-goldbach-conductor-dyadic-sum。",
+        "en": "Evaluate both prime-power totients before division. Downstream: L-goldbach-conductor-dyadic-sum."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-dyadic-conductor-prefix",
+      "file": "lean/PEqualNP/Outside/L_goldbach_dyadic_conductor_prefix.lean",
+      "module": "PEqualNP.Outside.L_goldbach_dyadic_conductor_prefix",
+      "statement": "∀ k : ℕ, 2≤k → (∑ j ∈ Finset.Icc 1 (k-2), 1/(2:ℝ)^j) = 1-4/(2:ℝ)^k",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0094 · 截断几何质量与缺失端层",
+        "en": "New route · Odd-character interference · OC-0094 · Geometric mass of the retained prefix"
+      },
+      "brief": {
+        "zh": "从 k=2 的空和出发，逐层添加最后一项。 下游：L-goldbach-conductor-dyadic-sum。",
+        "en": "Start at the empty prefix k=2 and add one terminal term per step. Downstream: L-goldbach-conductor-dyadic-sum."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-mellin-tail-binning",
+      "file": "lean/PEqualNP/Outside/L_goldbach_mellin_tail_binning.lean",
+      "module": "PEqualNP.Outside.L_goldbach_mellin_tail_binning",
+      "statement": "let Z := fun (m k : ℕ) (γ : Fin m → ℝ) => Finset.univ.filter (fun j => (k:ℝ) ≤ |γ j| ∧ |γ j| < (k+1:ℕ)); ∀ (m H B : ℕ) (γ : Fin m → ℝ) (f : Fin m → ℝ), (∀ i, |γ i| < (B+1:ℕ)) → (∑ i ∈ Finset.univ.filter (fun i => (H:ℝ)≤|γ i|), f i) = ∑ k ∈ Finset.Icc H B, ∑ i ∈ Z m k γ, f i",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0095 · 以频高整数部重排有限尾和",
+        "en": "New route · Odd-character interference · OC-0095 · Reindex a finite height tail by integer bins"
+      },
+      "brief": {
+        "zh": "按频高的自然数下取整分纤维；频高恰为整数的项归入左闭端。 下游：L-goldbach-mellin-weight-tail。",
+        "en": "Group by the natural floor of the absolute height, including integer heights in the bin on their right. Downstream: L-goldbach-mellin-weight-tail."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-mellin-log-transport",
+      "file": "lean/PEqualNP/Outside/L_goldbach_mellin_log_transport.lean",
+      "module": "PEqualNP.Outside.L_goldbach_mellin_log_transport",
+      "statement": "∀ d H k : ℕ, 1≤d → H≤k → Real.log ((d*(k+2):ℕ):ℝ) ≤ 2*(((k+1:ℕ):ℝ)/((H+1:ℕ):ℝ))*Real.log ((d*(H+2):ℕ):ℝ)",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0096 · 把各高度的导子对数移到统一截断点",
+        "en": "New route · Odd-character interference · OC-0096 · Transport the conductor logarithm to the cutoff"
+      },
+      "brief": {
+        "zh": "把对数拆成端点值与尺度比，用 log r≤r−1 和 log 2≥1/2。 下游：L-goldbach-mellin-weight-tail。",
+        "en": "Split off the endpoint logarithm and use log r ≤ r−1 and log 2 ≥ 1/2. Downstream: L-goldbach-mellin-weight-tail."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-mellin-power-tail",
+      "file": "lean/PEqualNP/Outside/L_goldbach_mellin_power_tail.lean",
+      "module": "PEqualNP.Outside.L_goldbach_mellin_power_tail",
+      "statement": "∀ a : ℕ, ∃ C : ℝ, 0<C ∧ ∀ H B : ℕ, (∑ k ∈ Finset.Icc H B, 1/((k+1:ℕ):ℝ)^(a+3)) ≤ C/((H+1:ℕ):ℝ)^(a+2)",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0097 · 截断幂尾的统一有限和界",
+        "en": "New route · Odd-character interference · OC-0097 · Finite power-tail bound uniform in the upper endpoint"
+      },
+      "brief": {
+        "zh": "单列首项后比较递减函数积分，或逐项控制相邻倒幂的差。 下游：L-goldbach-mellin-weight-tail。",
+        "en": "Separate the first term and compare with the integral of a decreasing power. Downstream: L-goldbach-mellin-weight-tail."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-window-square-lipschitz",
+      "file": "lean/PEqualNP/Outside/L_goldbach_window_square_lipschitz.lean",
+      "module": "PEqualNP.Outside.L_goldbach_window_square_lipschitz",
+      "statement": "∀ φ : ℝ → ℝ, ContDiff ℝ 1 φ → ∃ L : ℝ, 0≤L ∧ ∀ u ∈ Set.Icc (0:ℝ) 1, ∀ v ∈ Set.Icc (0:ℝ) 1, |φ u ^ 2 - φ v ^ 2| ≤ L*|u-v|",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0098 · 中心窗平方在单位区间的统一差商界",
+        "en": "New route · Odd-character interference · OC-0098 · Uniform difference bound for a squared smooth window"
+      },
+      "brief": {
+        "zh": "在紧区间取平方窗导数上界，再用均值不等式。 下游：L-goldbach-diagonal-window-variation。",
+        "en": "Bound the derivative of the squared window on the compact interval and apply the mean value bound. Downstream: L-goldbach-diagonal-window-variation."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-sampled-window-variation",
+      "file": "lean/PEqualNP/Outside/L_goldbach_sampled_window_variation.lean",
+      "module": "PEqualNP.Outside.L_goldbach_sampled_window_variation",
+      "statement": "∀ (f : ℝ → ℝ) (L : ℝ), 0≤L → (∀ u ∈ Set.Icc (0:ℝ) 1, ∀ v ∈ Set.Icc (0:ℝ) 1, |f u-f v|≤L*|u-v|) → ∀ n : ℕ, 0<n → (∑ k ∈ Finset.range n, |f (((k+1:ℕ):ℝ)/n)-f ((k:ℝ)/n)|) ≤ L",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0099 · 均匀网格上窗函数变差与网格数无关",
+        "en": "New route · Odd-character interference · OC-0099 · Mesh-independent sampled variation"
+      },
+      "brief": {
+        "zh": "证明每步网格间距为 1/n，再求和消去 n。 下游：L-goldbach-diagonal-window-variation。",
+        "en": "Sum the n increments of length 1/n. Downstream: L-goldbach-diagonal-window-variation."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": [
+        "L-goldbach-window-square-lipschitz"
+      ]
+    },
+    {
+      "id": "L-goldbach-log-grid-variation",
+      "file": "lean/PEqualNP/Outside/L_goldbach_log_grid_variation.lean",
+      "module": "PEqualNP.Outside.L_goldbach_log_grid_variation",
+      "statement": "∀ n : ℕ, 1≤n → (∑ k ∈ Finset.range n, |Real.log ((k+1:ℕ):ℝ)-Real.log (k:ℝ)|) = Real.log (n:ℝ)",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0100 · 含零端点的自然数对数总变差",
+        "en": "New route · Odd-character interference · OC-0100 · Exact log variation including the zero endpoint"
+      },
+      "brief": {
+        "zh": "分别处理 Lean 中 log 0 和 log 1，再望远镜求和。 下游：L-goldbach-diagonal-window-variation。",
+        "en": "Handle log 0 and log 1 explicitly before telescoping. Downstream: L-goldbach-diagonal-window-variation."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
+    },
+    {
+      "id": "L-goldbach-grid-product-variation",
+      "file": "lean/PEqualNP/Outside/L_goldbach_grid_product_variation.lean",
+      "module": "PEqualNP.Outside.L_goldbach_grid_product_variation",
+      "statement": "∀ (a b : ℕ → ℝ) (n : ℕ) (A B : ℝ), (∀ i≤n, |a i|≤A) → (∀ i≤n, |b i|≤B) → (∑ i ∈ Finset.range n, |a (i+1)*b (i+1)-a i*b i|) ≤ A*(∑ i ∈ Finset.range n, |b (i+1)-b i|)+B*(∑ i ∈ Finset.range n, |a (i+1)-a i|)",
+      "plain_statement": {
+        "zh": "新路线 · 奇特征干涉 · OC-0101 · 两个有限序列乘积的总变差预算",
+        "en": "New route · Odd-character interference · OC-0101 · Product variation inequality for sampled sequences"
+      },
+      "brief": {
+        "zh": "插入 a(i+1)b(i)，以绝对值上界分开两类增量。 下游：L-goldbach-diagonal-window-variation。",
+        "en": "Insert a(i+1)b(i) and sum the two bounded increments. Downstream: L-goldbach-diagonal-window-variation."
+      },
+      "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/main/research/ROADMAP.md",
+      "program": "correlation",
+      "parallel": true,
+      "imports": [],
+      "track": "odd-character-interference",
+      "role": "lemma",
+      "depends_on": []
     }
   ],
   "tracks": [

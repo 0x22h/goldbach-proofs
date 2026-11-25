@@ -3500,6 +3500,66 @@
         "program": "correlation",
         "parallel": true,
         "imports": []
+      },
+      {
+        "id": "L-no-three-in-line-triple-sample-incidence",
+        "file": "lean/PEqualNP/Outside/L_no_three_in_line_triple_sample_incidence.lean",
+        "module": "PEqualNP.Outside.L_no_three_in_line_triple_sample_incidence",
+        "statement": "∀ (n k : ℕ) (E : Finset (Finset (Fin n))), 3≤k → k≤n → (∀ e∈E, e.card=3) → (∑ T ∈ (Finset.univ : Finset (Fin n)).powersetCard k, (E.filter (fun e => e⊆T)).card) = E.card * Nat.choose (n-3) (k-3)",
+        "plain_statement": {
+          "zh": "固定大小抽样中的三点冲突总数",
+          "en": "Triple incidences across fixed-size samples"
+        },
+        "brief": {
+          "zh": "固定冲突三元组，从另外 n−3 个点中选 k−3 个补全样本。 对应父题：L-no-three-in-line-density-gain。",
+          "en": "Double-count by fixing a forbidden triple and completing the sample. Parent: L-no-three-in-line-density-gain."
+        },
+        "source": "https://epoch.ai/frontiermath/open-problems/no-three-in-line",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-no-three-in-line-triple-alteration",
+        "file": "lean/PEqualNP/Outside/L_no_three_in_line_triple_alteration.lean",
+        "module": "PEqualNP.Outside.L_no_three_in_line_triple_alteration",
+        "statement": "∀ (n : ℕ) (T : Finset (Fin n)) (E : Finset (Finset (Fin n))), (∀ e∈E, e.card=3) → ∃ U ⊆ T, T.card ≤ U.card+(E.filter (fun e => e⊆T)).card ∧ ∀ e∈E, ¬ e⊆U",
+        "plain_statement": {
+          "zh": "从有限候选中逐冲突删点",
+          "en": "Delete at most one site per surviving conflict"
+        },
+        "brief": {
+          "zh": "为每个包含在样本中的冲突选一个点，删除所选点的像。 对应父题：L-no-three-in-line-density-gain。",
+          "en": "Choose a hitting point in every contained triple and delete the image. Parent: L-no-three-in-line-density-gain."
+        },
+        "source": "https://epoch.ai/frontiermath/open-problems/no-three-in-line",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-no-three-in-line-sample-conflict-budget",
+        "file": "lean/PEqualNP/Outside/L_no_three_in_line_sample_conflict_budget.lean",
+        "module": "PEqualNP.Outside.L_no_three_in_line_sample_conflict_budget",
+        "statement": "∀ (n k b : ℕ) (E : Finset (Finset (Fin n))), 3≤k → k≤n → (∀ e∈E,e.card=3) → E.card*Nat.choose (n-3) (k-3) ≤ b*Nat.choose n k → ∃ U : Finset (Fin n), k≤U.card+b ∧ ∀ e∈E, ¬ e⊆U",
+        "plain_statement": {
+          "zh": "平均冲突预算推出无冲突子集",
+          "en": "Convert a mean conflict budget into an independent sample"
+        },
+        "brief": {
+          "zh": "至少一个样本冲突不超过预算。要提高密度仍需找到低冲突的几何候选族。 对应父题：L-no-three-in-line-density-gain。",
+          "en": "Take a sample with at most the mean budget. A geometric family with sufficiently few conflicts remains necessary. Parent: L-no-three-in-line-density-gain."
+        },
+        "source": "https://epoch.ai/frontiermath/open-problems/no-three-in-line",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": [
+          "L-no-three-in-line-triple-sample-incidence",
+          "L-no-three-in-line-triple-alteration"
+        ]
       }
     ],
     "roadmap": [
@@ -4575,6 +4635,21 @@
             "id": "L-no-three-in-line-repair-budget",
             "zh": "每步至少覆盖两个剩余冲突时的修复上界",
             "en": "A repair budget when each selected point hits two new conflicts"
+          },
+          {
+            "id": "L-no-three-in-line-triple-sample-incidence",
+            "zh": "固定大小抽样中的三点冲突总数",
+            "en": "Triple incidences across fixed-size samples"
+          },
+          {
+            "id": "L-no-three-in-line-triple-alteration",
+            "zh": "从有限候选中逐冲突删点",
+            "en": "Delete at most one site per surviving conflict"
+          },
+          {
+            "id": "L-no-three-in-line-sample-conflict-budget",
+            "zh": "平均冲突预算推出无冲突子集",
+            "en": "Convert a mean conflict budget into an independent sample"
           }
         ]
       }
@@ -7995,6 +8070,46 @@
         "program": "foundation",
         "imports": [],
         "parallel": true
+      },
+      {
+        "id": "L-square-packing-scaled-box-extrema",
+        "file": "lean/PEqualNP/Outside/L_square_packing_scaled_box_extrema.lean",
+        "module": "PEqualNP.Outside.L_square_packing_scaled_box_extrema",
+        "statement": "∀ A B D x L : ℝ, 0≤A → 0≤B → 0<D → ((∀ u v : ℝ, |u|≤1/2 → |v|≤1/2 → 0≤x+(A*u-B*v)/D ∧ x+(A*u-B*v)/D≤L) ↔ (A+B)/(2*D)≤x ∧ x≤L-(A+B)/(2*D))",
+        "plain_statement": {
+          "zh": "任意正分母下旋转坐标的精确取值界",
+          "en": "Sharp one-axis extrema with a common denominator"
+        },
+        "brief": {
+          "zh": "取一对相反的角点证明必要性；线性形式的绝对值界证明充分性。 对应父题：L-square-packing-cert-17-9。",
+          "en": "Use opposite corners for necessity, and bound the linear form for sufficiency. Parent: L-square-packing-cert-17-9."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-square-packing-scaled-box-two-axes",
+        "file": "lean/PEqualNP/Outside/L_square_packing_scaled_box_two_axes.lean",
+        "module": "PEqualNP.Outside.L_square_packing_scaled_box_two_axes",
+        "statement": "∀ A B D x y L : ℝ, 0≤A → 0≤B → 0<D → (let R := (A+B)/(2*D); (∀ u v : ℝ, |u|≤1/2 → |v|≤1/2 → 0≤x+(A*u-B*v)/D ∧ x+(A*u-B*v)/D≤L ∧ 0≤y+(B*u+A*v)/D ∧ y+(B*u+A*v)/D≤L) ↔ R≤x ∧ x≤L-R ∧ R≤y ∧ y≤L-R)",
+        "plain_statement": {
+          "zh": "由两条坐标轴合成全部有理朝向证书",
+          "en": "Two-axis certificate for every nonnegative rational rotation"
+        },
+        "brief": {
+          "zh": "交换坐标与符号复用单轴引理；代入各题的整数系数即可。 对应父题：L-square-packing-cert-17-9。",
+          "en": "Reuse the single-axis result after a coordinate sign change and specialize the three coefficients. Parent: L-square-packing-cert-17-9."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": [
+          "L-square-packing-scaled-box-extrema"
+        ]
       }
     ],
     "roadmap": [
@@ -8992,6 +9107,16 @@
             "id": "L-square-packing-cert-28-5",
             "zh": "斜率参数 5/28 的旋转方块四角容纳证书",
             "en": "Corner containment certificate for rotation parameter 5/28"
+          },
+          {
+            "id": "L-square-packing-scaled-box-extrema",
+            "zh": "任意正分母下旋转坐标的精确取值界",
+            "en": "Sharp one-axis extrema with a common denominator"
+          },
+          {
+            "id": "L-square-packing-scaled-box-two-axes",
+            "zh": "由两条坐标轴合成全部有理朝向证书",
+            "en": "Two-axis certificate for every nonnegative rational rotation"
           }
         ]
       }
@@ -12701,6 +12826,66 @@
         "program": "correlation",
         "parallel": true,
         "imports": []
+      },
+      {
+        "id": "L-quadratic-primes-mid-single-repeat-split",
+        "file": "lean/PEqualNP/Outside/L_quadratic_primes_mid_single_repeat_split.lean",
+        "module": "PEqualNP.Outside.L_quadratic_primes_mid_single_repeat_split",
+        "statement": "∀ (n : ℕ) (S : Finset ℕ), S⊆(n^2+1).primeFactors → (∑ p ∈ S, (((n^2+1).factorization p:ℕ):ℝ)*Real.log (p:ℝ)) = (∑ p ∈ S, Real.log (p:ℝ)) + ∑ p ∈ S, ((((n^2+1).factorization p-1:ℕ):ℝ))*Real.log (p:ℝ)",
+        "plain_statement": {
+          "zh": "将中段因子质量精确拆成首次与重复贡献",
+          "en": "Split the high-band mass into first and excess valuations"
+        },
+        "brief": {
+          "zh": "先由整除性得到估值非零，再把首份 log p 从总权中剥离。 对应父题：L-quadratic-primes-mid-high-recurrent。",
+          "en": "Positive valuations on the chosen support allow one log p term to be removed from each weight. Parent: L-quadratic-primes-mid-high-recurrent."
+        },
+        "source": "https://www.goldbach.tech/problems/quadratic-primes/?lemma=L-quadratic-primes-middle-prime-saving#roadmap",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-quadratic-primes-mid-repeat-point-cost",
+        "file": "lean/PEqualNP/Outside/L_quadratic_primes_mid_repeat_point_cost.lean",
+        "module": "PEqualNP.Outside.L_quadratic_primes_mid_repeat_point_cost",
+        "statement": "∀ (n : ℕ) (S : Finset ℕ), S⊆(n^2+1).primeFactors → (∑ p ∈ S, ((((n^2+1).factorization p-1:ℕ):ℝ))*Real.log (p:ℝ)) ≤ Real.log ((n^2+1:ℕ):ℝ)",
+        "plain_statement": {
+          "zh": "单个异常参数的重复因子对数损失",
+          "en": "Bound the excess valuation cost of one exceptional argument"
+        },
+        "brief": {
+          "zh": "非负性允许放大到完整素因子分解；取对数后的整式乘积给出上界。 对应父题：L-quadratic-primes-mid-high-recurrent。",
+          "en": "Enlarge to the full nonnegative valuation mass and use the logarithm of the factorization. Parent: L-quadratic-primes-mid-high-recurrent."
+        },
+        "source": "https://www.goldbach.tech/problems/quadratic-primes/?lemma=L-quadratic-primes-middle-prime-saving#roadmap",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-quadratic-primes-mid-repeat-block-cost",
+        "file": "lean/PEqualNP/Outside/L_quadratic_primes_mid_repeat_block_cost.lean",
+        "module": "PEqualNP.Outside.L_quadratic_primes_mid_repeat_block_cost",
+        "statement": "∀ x : ℕ, 1≤x → (∑ n ∈ Finset.Ioc x (2*x), ∑ p ∈ (n^2+1).primeFactors.filter (fun p => x<p), ((((n^2+1).factorization p-1:ℕ):ℝ))*Real.log (p:ℝ)) ≤ Real.log (((2*x)^2+1:ℕ):ℝ)",
+        "plain_statement": {
+          "zh": "整个二进区间重复中段因子的对数级总损失",
+          "en": "Logarithmic aggregate excess from repeated middle primes"
+        },
+        "brief": {
+          "zh": "用已有稀疏性将和压到至多一个 n，再套单点上界。这会留下首次整除事件的真实分布问题。 对应父题：L-quadratic-primes-mid-high-recurrent。",
+          "en": "Use the sparse-exception lemma and the pointwise bound; the distribution of first incidences remains open. Parent: L-quadratic-primes-mid-high-recurrent."
+        },
+        "source": "https://www.goldbach.tech/problems/quadratic-primes/?lemma=L-quadratic-primes-middle-prime-saving#roadmap",
+        "program": "correlation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": [
+          "L-quadratic-primes-mid-repeat-point-cost",
+          "L-quadratic-primes-mid-square-sparse"
+        ]
       }
     ],
     "roadmap": [
@@ -13772,6 +13957,21 @@
             "id": "L-quadratic-primes-mid-square-sparse",
             "zh": "二进区间内最多一个值含有重复中段素因子",
             "en": "At most one argument with a repeated middle prime per dyadic block"
+          },
+          {
+            "id": "L-quadratic-primes-mid-single-repeat-split",
+            "zh": "将中段因子质量精确拆成首次与重复贡献",
+            "en": "Split the high-band mass into first and excess valuations"
+          },
+          {
+            "id": "L-quadratic-primes-mid-repeat-point-cost",
+            "zh": "单个异常参数的重复因子对数损失",
+            "en": "Bound the excess valuation cost of one exceptional argument"
+          },
+          {
+            "id": "L-quadratic-primes-mid-repeat-block-cost",
+            "zh": "整个二进区间重复中段因子的对数级总损失",
+            "en": "Logarithmic aggregate excess from repeated middle primes"
           }
         ]
       }
@@ -17298,6 +17498,66 @@
         "program": "foundation",
         "imports": [],
         "parallel": true
+      },
+      {
+        "id": "L-hash-collision-lab-choose-tangent-right",
+        "file": "lean/PEqualNP/Outside/L_hash_collision_lab_choose_tangent_right.lean",
+        "module": "PEqualNP.Outside.L_hash_collision_lab_choose_tangent_right",
+        "statement": "∀ k t m : ℕ, 1≤k → t≤m → Nat.choose t k+(m-t)*Nat.choose t (k-1) ≤ Nat.choose m k",
+        "plain_statement": {
+          "zh": "整数二项式系数在切点右侧的支撑线",
+          "en": "Right supporting line for binomial coefficients"
+        },
+        "brief": {
+          "zh": "逐次应用 Pascal 公式，向右的一阶差分单调。 对应父题：L-hash-collision-lab-cert-10-15。",
+          "en": "Telescope Pascal increments and bound each from below by the initial slope. Parent: L-hash-collision-lab-cert-10-15."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-hash-collision-lab-choose-tangent-left",
+        "file": "lean/PEqualNP/Outside/L_hash_collision_lab_choose_tangent_left.lean",
+        "module": "PEqualNP.Outside.L_hash_collision_lab_choose_tangent_left",
+        "statement": "∀ k t m : ℕ, 1≤k → m≤t → Nat.choose t k ≤ Nat.choose m k+(t-m)*Nat.choose t (k-1)",
+        "plain_statement": {
+          "zh": "整数二项式系数在切点左侧的支撑线",
+          "en": "Left supporting line for binomial coefficients"
+        },
+        "brief": {
+          "zh": "对从 m 到 t 的每个增量使用末端斜率上界。 对应父题：L-hash-collision-lab-cert-10-15。",
+          "en": "Use the terminal slope as an upper bound for every increment. Parent: L-hash-collision-lab-cert-10-15."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-hash-collision-lab-choose-tangent-aggregate",
+        "file": "lean/PEqualNP/Outside/L_hash_collision_lab_choose_tangent_aggregate.lean",
+        "module": "PEqualNP.Outside.L_hash_collision_lab_choose_tangent_aggregate",
+        "statement": "∀ k t q : ℕ, 1≤k → ∀ b : Fin q → ℕ, q*Nat.choose t k+Nat.choose t (k-1)*(∑ i,b i) ≤ (∑ i,Nat.choose (b i) k)+q*t*Nat.choose t (k-1)",
+        "plain_statement": {
+          "zh": "任意有限负载表的高阶矩支撑线",
+          "en": "Higher-moment supporting line for arbitrary finite loads"
+        },
+        "brief": {
+          "zh": "按每个负载在切点的哪一侧选引理，移项再求和。 对应父题：L-hash-collision-lab-cert-10-15。",
+          "en": "Select the appropriate one-sided bound at each load and sum. Parent: L-hash-collision-lab-cert-10-15."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": [
+          "L-hash-collision-lab-choose-tangent-right",
+          "L-hash-collision-lab-choose-tangent-left"
+        ]
       }
     ],
     "roadmap": [
@@ -18344,6 +18604,21 @@
             "id": "L-hash-collision-lab-cert-13-26",
             "zh": "13 元同桶计数在负载 26 处的离散下界",
             "en": "Order-13 occupancy support bound at load 26"
+          },
+          {
+            "id": "L-hash-collision-lab-choose-tangent-right",
+            "zh": "整数二项式系数在切点右侧的支撑线",
+            "en": "Right supporting line for binomial coefficients"
+          },
+          {
+            "id": "L-hash-collision-lab-choose-tangent-left",
+            "zh": "整数二项式系数在切点左侧的支撑线",
+            "en": "Left supporting line for binomial coefficients"
+          },
+          {
+            "id": "L-hash-collision-lab-choose-tangent-aggregate",
+            "zh": "任意有限负载表的高阶矩支撑线",
+            "en": "Higher-moment supporting line for arbitrary finite loads"
           }
         ]
       }
@@ -21858,6 +22133,65 @@
         "program": "foundation",
         "imports": [],
         "parallel": true
+      },
+      {
+        "id": "L-log-rank-split-layer-family",
+        "file": "lean/PEqualNP/Outside/L_log_rank_split_layer_family.lean",
+        "module": "PEqualNP.Outside.L_log_rank_split_layer_family",
+        "statement": "∀ (n r c:ℕ) (S:Finset (Fin n)), let R:=S.powersetCard r; let C:=((Finset.univ:Finset (Fin n)) \\ S).powersetCard c; R.card*C.card=Nat.choose S.card r*Nat.choose (n-S.card) c ∧ ∀ A∈R,∀ B∈C,Disjoint A B",
+        "plain_statement": {
+          "zh": "任意两层大小的互补坐标矩形证书",
+          "en": "Complementary-block rectangle certificate for arbitrary layers"
+        },
+        "brief": {
+          "zh": "把两层的计数与集合不交性分别证明，再专门化到尚未完成的矩形。 对应父题：L-log-rank-cert-8-8。",
+          "en": "Use the cardinality of each powerset layer and containment in complementary blocks. Parent: L-log-rank-cert-8-8."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-log-rank-split-area-recurrence",
+        "file": "lean/PEqualNP/Outside/L_log_rank_split_area_recurrence.lean",
+        "module": "PEqualNP.Outside.L_log_rank_split_area_recurrence",
+        "statement": "∀ n r c s : ℕ, r≤s → s<n → c≤n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (s+1-r)*(n-s)*F (s+1) = (s+1)*(n-s-c)*F s",
+        "plain_statement": {
+          "zh": "移动一个坐标时矩形面积的精确递推",
+          "en": "Exact rectangle-area recurrence under one coordinate transfer"
+        },
+        "brief": {
+          "zh": "用相邻二项式系数递推，交叉相乘避免自然数除法。 对应父题：L-log-rank-cert-8-8。",
+          "en": "Use adjacent binomial recurrences and cross-multiply to avoid rounded division. Parent: L-log-rank-cert-8-8."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": []
+      },
+      {
+        "id": "L-log-rank-split-area-gain",
+        "file": "lean/PEqualNP/Outside/L_log_rank_split_area_gain.lean",
+        "module": "PEqualNP.Outside.L_log_rank_split_area_gain",
+        "statement": "∀ n r c s : ℕ, r≤s → s<n → c≤n-(s+1) → let F := fun t => Nat.choose t r * Nat.choose (n-t) c; (F s ≤ F (s+1) ↔ (s+1)*c ≤ r*(n-s))",
+        "plain_statement": {
+          "zh": "分配坐标给行层能否增大矩形",
+          "en": "Determine when moving a coordinate increases area"
+        },
+        "brief": {
+          "zh": "利用可行区内的面积正性消去递推中的面积，比较交叉乘积。 对应父题：L-log-rank-cert-8-8。",
+          "en": "Cancel the positive feasible area in the recurrence and compare the cross-products. Parent: L-log-rank-cert-8-8."
+        },
+        "source": "https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/ebb95f6/research/problems.json",
+        "program": "foundation",
+        "imports": [],
+        "parallel": true,
+        "depends_on": [
+          "L-log-rank-split-area-recurrence"
+        ]
       }
     ],
     "roadmap": [
@@ -22907,6 +23241,21 @@
             "id": "L-log-rank-cert-12-14",
             "zh": "12 元行与 14 元列的不交单色矩形",
             "en": "Disjoint monochromatic rectangle for layer sizes 12 and 14"
+          },
+          {
+            "id": "L-log-rank-split-layer-family",
+            "zh": "任意两层大小的互补坐标矩形证书",
+            "en": "Complementary-block rectangle certificate for arbitrary layers"
+          },
+          {
+            "id": "L-log-rank-split-area-recurrence",
+            "zh": "移动一个坐标时矩形面积的精确递推",
+            "en": "Exact rectangle-area recurrence under one coordinate transfer"
+          },
+          {
+            "id": "L-log-rank-split-area-gain",
+            "zh": "分配坐标给行层能否增大矩形",
+            "en": "Determine when moving a coordinate increases area"
           }
         ]
       }
