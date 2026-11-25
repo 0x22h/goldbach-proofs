@@ -70,6 +70,7 @@ jobs:
                    f"example : StrongGoldbach ↔ ({endpoint}) := strongGoldbach_iff_primeMass",
                    "set_option autoImplicit false"]
           reductions = {
+              "L-goldbach-packet-rational-peak-far-tails": "GoldbachPacket.farTails",
               "L-goldbach-packet-mangoldt-uniform-spectral-error": "GoldbachPacket.mangoldtSpectralError",
               "L-goldbach-packet-mangoldt-masked-error": "GoldbachPacket.mangoldtMaskedError",
               "L-goldbach-packet-energy-from-mangoldt": "GoldbachPacket.resonantFromMangoldt",
