@@ -1,4 +1,5 @@
-import Mathlib
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.NumberTheory.Chebyshev
 
 namespace GoldbachFixedAP
 noncomputable section
@@ -163,13 +164,27 @@ theorem higherPowers : ∀ n : ℕ, 10^16 ≤ n → powers n ≤ (n:ℝ)/200 := 
       dsimp [x]
       rw [← Real.rpow_natCast, ← Real.rpow_mul hNpos.le]
       norm_num
+    have hxpow : x^3 * 1600 ≤ x^4 := by
+      calc
+        x^3 * 1600 ≤ x^3 * x := by
+          exact mul_le_mul_of_nonneg_left (by linarith : (1600:ℝ) ≤ x) (pow_nonneg hxpos.le 3)
+        _ = x^4 := by ring
     rw [hn34, hn_eq]
-    nlinarith [hxpos, hx]
+    calc
+      (8:ℝ) * x^3 ≤ x^4 / 200 := by
+        exact (le_div_iff₀ (by norm_num : (0:ℝ) < 200)).mpr (by nlinarith [hxpow])
   calc
     Chebyshev.psi (n : ℝ) - Chebyshev.theta (n : ℝ)
         ≤ 2 * Real.sqrt (n : ℝ) * Real.log (n : ℝ) := hpsi
     _ ≤ 8 * (n : ℝ) ^ (3/4 : ℝ) := hmain
     _ ≤ (n:ℝ)/200 := hsmall
+
+/-- The conditional route from the prime-only estimate and the global power budget. -/
+theorem thetaReduction
+    (primes : ∀ q a n : ℕ, 1 ≤ q → q ≤ 105 → Nat.Coprime a q → 10^16 ≤ n →
+      (n:ℝ) < Real.exp (Real.exp (19/5)) → |theta q a n - (n:ℝ)/q.totient| ≤ (n:ℝ)/200)
+    (higher : ∀ n : ℕ, 10^16 ≤ n → powers n ≤ (n:ℝ)/200) : Parent :=
+  fromTheta primes higher
 
 theorem fromTheta
     (primes : ∀ q a n : ℕ, 1 ≤ q → q ≤ 105 → Nat.Coprime a q → 10^16 ≤ n →
@@ -180,6 +195,8 @@ theorem fromTheta
   obtain ⟨hlo,hhi⟩ := ap_theta q a n
   have hp := higher n hn
   have hn0 : (0:ℝ) ≤ n := Nat.cast_nonneg n
+  have hdecomp : ap q a n = theta q a n + (ap q a n - theta q a n) := by ring
+  rw [hdecomp]
   apply abs_le.mpr
   constructor <;> linarith
 
