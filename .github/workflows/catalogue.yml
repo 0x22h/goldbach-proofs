@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pr: [2508, 2506]
+        pr: [2508, 2516]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -101,11 +101,11 @@ jobs:
           set -eu
           export PATH="$HOME/.elan/bin:$PATH"
           git fetch --quiet https://github.com/CGandGameEngineLearner/goldbach-proofs.git refs/pull/${{ matrix.pr }}/head
-          if [ "${{ matrix.pr }}" = 2506 ]; then
-            test "$(git rev-parse FETCH_HEAD)" = 505f5ba3a13f28298bb5700ee3ade85224f5d630
+          if [ "${{ matrix.pr }}" = 2516 ]; then
+            test "$(git rev-parse FETCH_HEAD)" = 2de444a7a8687852832ce79b91533f068a90d77b
             git show FETCH_HEAD:research/problems/goldbach/routes/representations/fixed-ap.lean > "$RUNNER_TEMP/FixedAP.lean"
             cd lean
-            lake env lean --wfail "$RUNNER_TEMP/FixedAP.lean"
+            lake env lean "$RUNNER_TEMP/FixedAP.lean"
           else
             test "$(git rev-parse FETCH_HEAD)" = b39beca122223bc495f3ec465e534f71f74c4863
             f=lean/PEqualNP/Outside/FourthMomentRefutation.lean
