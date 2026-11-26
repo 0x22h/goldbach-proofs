@@ -1,5 +1,7 @@
 name: GRH proof verification
 on:
+  push:
+    branches: [ci/grh-compact]
   pull_request:
     paths:
       - 'lean/PEqualNP/GRH.lean'
