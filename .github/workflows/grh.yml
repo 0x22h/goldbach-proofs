@@ -13,6 +13,8 @@ on:
       - '.github/workflows/grh.yml'
 permissions:
   contents: read
+env:
+  LEAN_NUM_THREADS: "1"
 jobs:
   verify:
     runs-on: ubuntu-latest
