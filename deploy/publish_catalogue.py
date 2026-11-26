@@ -1,4 +1,4 @@
-"""Activate owner-merged catalogue changes after CI on their exact main commit."""
+"""Publish catalogue PRs merged by authorized maintainers after exact-commit CI."""
 import argparse
 import json
 import os
@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 REPO = "CGandGameEngineLearner/goldbach-proofs"
+OWNER_ID = 103875245
 STORE = Path("/opt/goldbach-catalogues")
 APP = Path("/opt/goldbach-web")
 CURRENT = STORE / "current"
@@ -72,8 +73,9 @@ def approved(sha):
     if not pr:
         raise RuntimeError("Expected a merged catalogue PR for " + sha)
     detail = api("/pulls/" + str(pr["number"]))
-    if (detail.get("merged_by") or {}).get("login", "").casefold() != REPO.split("/")[0].casefold():
-        raise RuntimeError("Catalogue PR must be merged by the project owner")
+    allowed = {OWNER_ID, *(int(uid) for uid in os.environ.get("GOLDBACH_CATALOGUE_MERGER_IDS", "").split())}
+    if (detail.get("merged_by") or {}).get("id") not in allowed:
+        raise RuntimeError("Catalogue PR requires an authorized research task publisher")
     runs = api("/actions/workflows/catalogue.yml/runs?event=push&branch=main&head_sha=" + sha)["workflow_runs"]
     return next(((detail, r) for r in runs if r["head_sha"] == sha and r["conclusion"] == "success"), None)
 
