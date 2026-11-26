@@ -1,5 +1,7 @@
 # 强哥德巴赫中间命题：每个偶数的素数加四殆素数表示
 
+**后续技术审定**　中段由独立 Arb 程序逐段重建；尾段由 Rosser 边界和的有理数不等式直接控制。在保留 Dirichlet GRH 和已发表显式估计的前提下，审定意见支持本文命题。下文保留原稿收录时的审阅记录。[审定意见、证明及复现命令](referee.md)
+
 **核心贡献者（原证明稿与计算证书）**　千早爱音，GitHub 账号 **Visio-Vanitas**。上游说明推导和脚本主要由作者指导 AI 辅助完成。本项目负责整理证明、复现证书和下文的替代尾段检验。[贡献者主页](https://github.com/Visio-Vanitas) · [作者说明及固定版本](https://github.com/Visio-Vanitas/buchstab-switching/blob/a5c1fa9cee34de526915481f93cadeb1ea16014b/README.md)
 
 **命题。** 假设 Dirichlet $L$ 函数的广义黎曼猜想。对每个偶数 $N\ge4$，存在素数 $p$ 和正整数 $m$，使 $N=p+m$ 且 $\Omega(m)\le4$。这里 $\Omega$ 按重数计素因子，$\Omega(1)=0$。
