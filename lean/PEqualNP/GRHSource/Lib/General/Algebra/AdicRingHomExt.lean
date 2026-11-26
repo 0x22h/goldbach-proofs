@@ -116,7 +116,7 @@ lemma eq_of_forall_pow_dvd_sub π [IsHausdorff (span {π}) R] (h : ∀ n, π ^ n
   IsHausdorff.eq_iff_smodEq.2 (smodEq_span_pow_iff_dvd.2 <| h ·)
 
 lemma isUnit_of_dvd_sub [IsAdicComplete (span {π}) R] (u : IsUnit y) (h : π ∣ x - y) : IsUnit x :=
-  by simpa [sub_mul] using mem_jacobson_bot.1 (HenselianRing.jac (mem_span_singleton.2 h)) ↑u.unit⁻¹
+  by simpa [sub_mul] using Ring.mem_jacobson_iff.1 (HenselianRing.jac (mem_span_singleton.2 h)) (↑u.unit⁻¹ : R)
 
 omit [Fact p.Prime] in
 lemma isAdicComplete_over_base [Algebra S R] (h : IsAdicComplete (span {(p : R)}) R) :

@@ -1,4 +1,5 @@
 import PEqualNP.GRHSource.Lib.General.LinearAlgebra.Base
+import PEqualNP.GRHSource.Lib.General.NumberTheory.PlaceEmbedding
 
 /-! Part of: Adeles of a number field: base change, discreteness and compact quotient, modulus
 (known result; see Lib.Adelic.Adeles.IdeleHilbert90).
@@ -11,18 +12,6 @@ noncomputable section
 open Ideal _root_.IsDedekindDomain Set Classical Filter IsLocalRing NumberField RestrictedProduct
   Valued WithZero WithZeroTopology Ideal.IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
   UniformSpace.Completion adicCompletion
-
-/-- A choice, for each infinite place w of E, of a complex embedding Φ w of E that induces w. -/
-class PlaceEmbedding (E : Type*) [Field E] where
-  Φ : _ → E →+* ℂ
-  mk_Φ w : InfinitePlace.mk (Φ w) = w
-
-export PlaceEmbedding (Φ mk_Φ)
-
-attribute [simp] mk_Φ
-
-instance (priority := low) (E : Type*) [Field E] : PlaceEmbedding E :=
-  ⟨_, InfinitePlace.mk_embedding⟩
 
 /-- E is a CM number field equipped with a CM type: for each infinite place w of E, a chosen
 complex embedding of E that induces w. -/
