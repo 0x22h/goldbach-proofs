@@ -133,19 +133,12 @@ lemma card_fibre_le_two {x p : ℕ} (hxp : x < p) :
   obtain ⟨b, hb⟩ : ∃ b, b ∈ s := Finset.nonempty_of_ne_empty hb
   have hbmem : b ∈ Ioc x (2 * x) ∧ p ∈ fib x b := Finset.mem_filter.mp hb
   have hp : p.Prime := (mem_fib hbmem.2).1
+  haveI : Fact p.Prime := ⟨hp⟩
   have hb2 : (b : ZMod p) ^ 2 = -1 := sq_neg_one hbmem.2
   have hn0 : (b : ZMod p) ≠ 0 := by
     intro hz
-    have h2 : (b : ZMod p) ^ 2 = 0 := by rw [hz]; simp
-    have h3 : (-1 : ZMod p) = 0 := by rwa [← hb2, h2]
-    have h1 : (1 : ZMod p) = 0 := by
-      calc (1 : ZMod p) = -(-1 : ZMod p) := by ring
-        _ = -0 := by rw [h3]
-        _ = 0 := by simp
-    have hd : p ∣ 1 := by
-      have hz1 : (↑(1 : ℕ) : ZMod p) = 0 := h1
-      exact (ZMod.natCast_eq_zero_iff 1 p).mp hz1
-    exact absurd hd hp.not_dvd_one
+    have h1 : (-1 : ZMod p) = 0 := by rw [← hb2, hz]; simp
+    exact absurd h1 (neg_ne_zero.mpr one_ne_zero)
   have hsub : s.image (fun n : ℕ => (n : ZMod p)) ⊆ {(b : ZMod p), -(b : ZMod p)} := by
     intro y hy
     obtain ⟨n, hn, rfl⟩ := Finset.mem_image.mp hy
@@ -163,31 +156,40 @@ lemma card_fibre_le_two {x p : ℕ} (hxp : x < p) :
         ring
       rw [h2, h1]
     rcases eq_zero_or_eq_zero_of_mul_eq_zero hfac with h | h
-    · left
+    · have hu1 : (n : ZMod p) * (b : ZMod p)⁻¹ = 1 := by
+        have h' : ((n : ZMod p) * (b : ZMod p)⁻¹ - 1) + 1 = (0 : ZMod p) + 1 := by rw [h]
+        simpa using h'
       have hn' : (n : ZMod p) = (b : ZMod p) := by
         calc (n : ZMod p) = (n : ZMod p) * ((b : ZMod p) * (b : ZMod p)⁻¹) := by field_simp [hn0]
           _ = ((n : ZMod p) * (b : ZMod p)⁻¹) * (b : ZMod p) := by ring
-          _ = 1 * (b : ZMod p) := by rw [h]
+          _ = 1 * (b : ZMod p) := by rw [hu1]
           _ = (b : ZMod p) := by simp
-      simpa using hn'
-    · right
+      rw [Finset.mem_insert, Finset.mem_singleton]
+      exact Or.inl hn'
+    · have hu1 : (n : ZMod p) * (b : ZMod p)⁻¹ = -1 := by
+        have h' : ((n : ZMod p) * (b : ZMod p)⁻¹ + 1) - 1 = (0 : ZMod p) - 1 := by rw [h]
+        simpa using h'
       have hn' : (n : ZMod p) = -(b : ZMod p) := by
         calc (n : ZMod p) = (n : ZMod p) * ((b : ZMod p) * (b : ZMod p)⁻¹) := by field_simp [hn0]
           _ = ((n : ZMod p) * (b : ZMod p)⁻¹) * (b : ZMod p) := by ring
-          _ = (-1 : ZMod p) * (b : ZMod p) := by rw [h]
+          _ = (-1 : ZMod p) * (b : ZMod p) := by rw [hu1]
           _ = -(b : ZMod p) := by simp
-      simpa using hn'
-  calc s.card = (s.image (fun n => (n : ZMod p))).card :=
-      Finset.card_image_of_injective _
-        (fun a ha bb hb2' h =>
-          cast_inj hxp (Finset.mem_filter.mp ha).1 (Finset.mem_filter.mp hb').1 h)
+      rw [Finset.mem_insert, Finset.mem_singleton]
+      exact Or.inr hn'
+  have hinj : Set.InjOn (fun n : ℕ => (n : ZMod p)) (↑s) := by
+    intro a ha bb hb h
+    obtain ⟨ha1, _⟩ := Finset.mem_filter.mp ha
+    obtain ⟨hb1, _⟩ := Finset.mem_filter.mp hb
+    exact cast_inj hxp ha1 hb1 h
+  have hpair : ({(b : ZMod p), -(b : ZMod p)} : Finset (ZMod p)).card ≤ 2 := by
+    calc ({(b : ZMod p), -(b : ZMod p)} : Finset (ZMod p)).card
+        = (insert (b : ZMod p) ({-(b : ZMod p)} : Finset (ZMod p))).card := rfl
+      _ ≤ ({-(b : ZMod p)} : Finset (ZMod p)).card + 1 := Finset.card_insert_le _ _
+      _ = 2 := by rw [Finset.card_singleton]
+  calc s.card = (s.image (fun n : ℕ => (n : ZMod p))).card :=
+      (Finset.card_image_of_injOn hinj).symm
     _ ≤ ({(b : ZMod p), -(b : ZMod p)} : Finset (ZMod p)).card := Finset.card_le_card hsub
-    _ ≤ 2 := by
-      calc ({(b : ZMod p), -(b : ZMod p)} : Finset (ZMod p)).card
-          = (({(b : ZMod p)} : Finset (ZMod p)) ∪ {-(b : ZMod p)}).card := by simp
-        _ ≤ ({(b : ZMod p)} : Finset (ZMod p)).card + {-(b : ZMod p)}.card :=
-            Finset.card_union_le _ _
-        _ = 2 := by simp
+    _ ≤ 2 := hpair
 
 /-- 双重和按第二个坐标重排（`g` 不依赖第一个坐标）。 -/
 lemma swap_sum {F : ℕ → Finset ℕ} {s : Finset ℕ} (g : ℕ → ℝ) :
@@ -273,7 +275,7 @@ lemma main (x : ℕ) (hx : 1 ≤ x) : middle x ≤ 4 * apTheta x := by
   have hstep1 : middle x ≤ 2 * ∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, Real.log (p : ℝ) := by
     have hA : (∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, wgt n p) ≤
         ∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, (2 : ℝ) * Real.log (p : ℝ) := by
-      refine Finset.sum_le_sum (β := ℝ) fun n hn => Finset.sum_le_sum (β := ℝ) fun p hp => ?_
+      refine Finset.sum_le_sum fun n hn => Finset.sum_le_sum fun p hp => ?_
       have hle := multiplicity_le_two hx hn hp
       have hlog := log_nonneg (Nat.Prime.two_le (mem_fib hp).1)
       have h2 : ((n ^ 2 + 1).factorization p : ℝ) ≤ (2 : ℝ) := by exact_mod_cast hle
@@ -282,7 +284,7 @@ lemma main (x : ℕ) (hx : 1 ≤ x) : middle x ≤ 4 * apTheta x := by
     have hB : ∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, (2 : ℝ) * Real.log (p : ℝ)
         = 2 * ∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, Real.log (p : ℝ) := by
       simp only [Finset.mul_sum]
-    rw [hB]
+    rw [← hB]
     exact hA
   have hP := support_subset x hx
   have hcard : ∀ p ∈ (Ioc x (2 * x)).biUnion (fib x),
@@ -302,14 +304,14 @@ lemma main (x : ℕ) (hx : 1 ≤ x) : middle x ≤ 4 * apTheta x := by
     simp only [nsmul_eq_mul, Nat.cast_ofNat]
     exact mul_le_mul_of_nonneg_right (Nat.cast_le.mpr (hcard p hp)) hlog
   have hsum : ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x), (2 : ℝ) * Real.log (p : ℝ)
-      = 2 * ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x), Real.log (p : ℝ) :=
-      (Finset.mul_sum 2 _ _).symm
+      = 2 * ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x), Real.log (p : ℝ) := by
+        simp only [Finset.mul_sum]
   have htail : ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x), Real.log (p : ℝ) ≤ apTheta x := by
     show ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x), Real.log (p : ℝ) ≤
       ∑ p ∈ ((range ((2 * x) ^ 132301 + 1)).filter (fun p => p.Prime ∧ p % 4 = 1)), Real.log p
-    refine Finset.sum_le_sum_of_subset_of_nonneg hP (fun p _ _ => log_nonneg ?_)
-    obtain ⟨n, _, hpn⟩ := Finset.mem_biUnion.mp ‹_›
-    exact Nat.Prime.two_le (mem_fib hpn).1
+    refine Finset.sum_le_sum_of_subset_of_nonneg hP (fun p hp _ => ?_)
+    obtain ⟨_, hpr⟩ := Finset.mem_filter.mp hp
+    exact log_nonneg (Nat.Prime.two_le hpr.1)
   calc middle x ≤ 2 * ∑ n ∈ Ioc x (2 * x), ∑ p ∈ fib x n, Real.log (p : ℝ) := hstep1
     _ = 2 * ∑ p ∈ (Ioc x (2 * x)).biUnion (fib x),
           ((Ioc x (2 * x)).filter (fun n => p ∈ fib x n)).card • Real.log (p : ℝ) := by
@@ -339,5 +341,3 @@ theorem Conjectures.QuadraticPrimes.MiddleCoarse :
     ∀ x : ℕ, 1 ≤ x → middle x ≤ 4 * apTheta x := by
   intros wgt middle apTheta x hx
   exact QpMiddleCoarse.main x hx
-
-#print axioms Conjectures.QuadraticPrimes.MiddleCoarse
